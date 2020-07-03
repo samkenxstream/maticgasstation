@@ -1,3 +1,7 @@
+#!/usr/bin/python3
+
+from __future__ import annotations
+
 """
 egs_ref.py
 
@@ -13,21 +17,17 @@ import time
 import random
 import string
 from hexbytes import HexBytes
-from sqlalchemy import create_engine, inspect
 from .output import Output, OutputException
 from .txbatch import TxBatch
 from .modelparams.constants import *
 from .jsonexporter import JSONExporter, JSONExporterException
 from .report_generator import SummaryReport
 from .txbatch import TxBatch
-import egs.settings
-egs.settings.load_settings()
-connstr = egs.settings.get_mysql_connstr()
-exporter = JSONExporter()
-web3 = egs.settings.get_web3_provider()
-console = Output()
-engine = create_engine(connstr, echo=False, pool_recycle=3600)
-conn = engine.connect()
+
+from .settings import getRPC
+
+web3 = None
+
 
 class CleanTx():
     """transaction object / methods for pandas"""
@@ -38,28 +38,49 @@ class CleanTx():
         self.hash = tx_obj.hash
         self.block_posted = block_posted
         self.block_mined = tx_obj.blockNumber
+        
         if 'to' in tx_obj and isinstance(tx_obj['to'], str):
             self.to_address = tx_obj['to'].lower()
+        
         if 'from' in tx_obj and isinstance(tx_obj['from'], str):
             self.from_address = tx_obj['from'].lower()
+        
         self.time_posted = time_posted
         self.gas_price = tx_obj['gasPrice']
         self.gas_offered = tx_obj['gas']
-        self.round_gp_10gwei = None
-        self.round_gp()
+        self.round_gp_10gwei = self.round_gp()
+        
         if isinstance(miner, str):
             self.miner = miner.lower()
         else:
             self.miner = miner
+        
         self.nonce = tx_obj['nonce']
 
-    def to_dataframe(self):
-        data = {self.hash: {'block_posted':self.block_posted, 'block_mined':self.block_mined, 'to_address':self.to_address, 'from_address':self.from_address, 'nonce':self.nonce, 'time_posted':self.time_posted, 'time_mined': None, 'gas_price':self.gas_price, 'miner':self.miner, 'gas_offered':self.gas_offered, 'round_gp_10gwei':self.round_gp_10gwei}}
-        df = pd.DataFrame.from_dict(data, orient='index')
-        return df
+    def to_dataframe(self) -> pd.DataFrame:
+        '''
+            Returns a pandas dataframe object holding
+            transaction related information
+        '''
+        return pd.DataFrame.from_dict(
+            {self.hash: 
+                {'block_posted':self.block_posted, 
+                'block_mined':self.block_mined, 
+                'to_address':self.to_address, 
+                'from_address':self.from_address, 
+                'nonce':self.nonce, 
+                'time_posted':self.time_posted, 
+                'time_mined': None, 
+                'gas_price':self.gas_price, 
+                'miner':self.miner, 
+                'gas_offered':self.gas_offered, 
+                'round_gp_10gwei':self.round_gp_10gwei}
+        }, orient='index')
 
     def round_gp(self):
-        """Rounds the gas price to gwei"""
+        '''
+            Rounding gas price to GWei
+        '''
         gp = self.gas_price/1e7
         if gp >= 1 and gp < 100:
             gp = int(np.ceil(gp))
@@ -73,7 +94,7 @@ class CleanTx():
             gp = gp*100
         else:
             gp = 0
-        self.round_gp_10gwei = gp
+        return gp
 
 class CleanBlock():
     """block object/methods for pandas"""
@@ -772,3 +793,6 @@ class GasPriceReport():
         except Exception as e:
             console.error("write_to_json: Exception caught: " + str(e))
 
+
+if __name__ == '__main__':
+    print('This script is not supposed to be used t')
