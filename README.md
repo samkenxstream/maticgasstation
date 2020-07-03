@@ -2,7 +2,7 @@
 
 ## intro
 
-_**maticgasstation** - A friendly Matic developer tool_
+_**maticgasstation** - Friend of a Matic developer_
 
 _Tool for getting gas price recommendations before sending transactions off to matic network_
 
