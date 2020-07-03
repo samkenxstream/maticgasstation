@@ -1,74 +1,51 @@
+#!/usr/bin/python3
+
+from __future__ import annotations
+
 import configparser
 import os
 import sys
 
 from web3 import Web3, HTTPProvider, WebsocketProvider, IPCProvider
 
-parser_instance = None
-settings_loaded = False
+'''
+    Matic RPC: https://rpc-mumbai.matic.today/
 
-def settings_file_loaded():
-    global settings_loaded
-    return settings_loaded is True
+    To be worked on later
+'''
 
-def load_settings(settings_file=None):
-    """Load settings from a settings file."""
-    global parser_instance
-    global settings_loaded
 
-    if settings_file is None:
-        settings_file = get_settings_filepath()
+def loadSettings(settingsFile: str) -> configparser.ConfigParser:
+    '''
+        Configuration file parser, which holds info
+        related to RPC endpoint, to which `maticgasstation` will talk
+    '''
+    if not settingsFile:
+        return None
 
-    """Get settings from INI configuration file."""
-    parser_instance = configparser.ConfigParser()
-    parser_instance.read(settings_file)
+    parserInstance = configparser.ConfigParser()
+    parserInstance.read(settingsFile)
 
-    # legacy support for [geth] config section, alternatively [parity]
-    # the new name is [rpc]
-    if 'rpc' not in parser_instance:
-        if 'geth' in parser_instance:
-            parser_instance['rpc'] = parser_instance['geth']
-        elif 'parity' in parser_instance:
-            parser_instance['rpc'] = parser_instance['parity']
+    return parserInstance
 
-    settings_loaded = True
 
-def get_setting(section, name):
-    """Get a setting."""
-    global parser_instance
+def getSetting(instance: configparser.ConfigParser, section: str, name: str) -> str:
+    '''
+        Given settings section and name, it'll return corresponding value
 
-    if section in parser_instance:
-        if name in parser_instance[section]:
-            return parser_instance[section][name]
-    raise KeyError("Could not find setting %s.%s in configuration." % (section, name))
+        Much like looking up value from a HashMap/ Dict using key
 
-def get_settings_filepath():
-    """Find a valid configuration file.
-    Order of priority:
-        '/etc/ethgasstation/settings.conf'
-        '/etc/ethgasstation.conf'
-        '/etc/default/ethgasstation.conf'
-        '/opt/ethgasstation/settings.conf'
-    """
-    default_ini_locations = [
-        '/etc/ethgasstation/settings.conf',
-        '/etc/ethgasstation.conf',
-        '/etc/default/ethgasstation.conf',
-        '/opt/ethgasstation/settings.conf'
-    ]
+        If not present, returns None
+    '''
 
-    # short circuit on environment variable
-    if "SETTINGS_FILE" in os.environ:
-        path = os.path.join(os.getcwd(), os.environ['SETTINGS_FILE'])
-        if os.path.isfile(path):
-            return os.path.abspath(os.environ['SETTINGS_FILE'])
-        else:
-            raise FileNotFoundError("Can't find env-set settings file at %s" % path)
+    if section in instance:
+        if name in instance[section]:
+            return instance[section][name]
 
-    for candidate_location in default_ini_locations:
-        if os.path.isfile(candidate_location):
-            return candidate_location
-    raise FileNotFoundError("Cannot find EthGasStation settings file.")
+        return None
+
+    return None
+
 
 def get_web3_provider(protocol=None, hostname=None, port=None, timeout=None):
     """Get Web3 instance. Supports websocket, http, ipc."""
@@ -82,7 +59,7 @@ def get_web3_provider(protocol=None, hostname=None, port=None, timeout=None):
         try:
             timeout = int(get_setting('rpc', 'timeout'))
         except KeyError:
-            timeout = 15 # default timeout is 15 seconds
+            timeout = 15  # default timeout is 15 seconds
 
     if protocol == 'ws' or protocol == 'wss':
         provider = WebsocketProvider(
@@ -90,7 +67,7 @@ def get_web3_provider(protocol=None, hostname=None, port=None, timeout=None):
                 protocol,
                 hostname,
                 port),
-            websocket_kwargs={'timeout':timeout}
+            websocket_kwargs={'timeout': timeout}
         )
         provider.egs_timeout = timeout
         return Web3(provider)
@@ -100,7 +77,7 @@ def get_web3_provider(protocol=None, hostname=None, port=None, timeout=None):
                 protocol,
                 hostname,
                 port),
-            request_kwargs={'timeout':timeout}
+            request_kwargs={'timeout': timeout}
         )
         provider.egs_timeout = timeout
         return Web3(provider)
@@ -113,6 +90,7 @@ def get_web3_provider(protocol=None, hostname=None, port=None, timeout=None):
         return Web3(provider)
     else:
         raise Exception("Can't set web3 provider type %s" % str(protocol))
+
 
 def get_mysql_connstr():
     """Get a MySQL connection string for SQLAlchemy, or short circuit to
@@ -128,5 +106,5 @@ def get_mysql_connstr():
         get_setting('mysql', 'hostname'),
         get_setting('mysql', 'port'),
         get_setting('mysql', 'database')
-        )
+    )
     return connstr
