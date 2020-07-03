@@ -3,6 +3,7 @@
 from __future__ import annotations
 from configparser import ConfigParser
 from web3 import Web3, HTTPProvider
+from web3.middleware import geth_poa_middleware
 
 '''
     Matic RPC: https://rpc-mumbai.matic.today/
@@ -76,6 +77,17 @@ def getRPC(settingsFile: str) -> Web3:
     return Web3(
         HTTPProvider('{}://{}:{}'.format(protocol, hostname, port),
                      request_kwargs={'timeout': timeout}))
+
+
+def setPOAMiddleWare(web3Provider: Web3):
+    '''
+        This is required when connected node is part of network
+        using PoA as consensus mechanism
+
+        This onion layer will encode and decode data while talking to
+        rpc endpoint providing node
+    '''
+    web3Provider.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 if __name__ == '__main__':
