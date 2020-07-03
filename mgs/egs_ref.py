@@ -9,6 +9,8 @@ Utility functions, MySQL Schemas, and other such architecture
 for the EthGasStation adaptive oracle.
 """
 
+from typing import List, Any
+
 import pandas as pd
 import numpy as np
 import json
@@ -25,6 +27,7 @@ from .report_generator import SummaryReport
 from .txbatch import TxBatch
 
 from .settings import getRPC
+from web3 import Web3
 
 
 class CleanTransaction:
@@ -77,7 +80,7 @@ class CleanTransaction:
                  'round_gp_10gwei': self.round_gp_10gwei}
              }, orient='index')
 
-    def round_gp(self):
+    def round_gp(self) -> int:
         '''
             Rounding gas price to GWei
         '''
@@ -152,62 +155,66 @@ def make_gp_index() -> pd.DataFrame:
     return df
 
 
-class TxpoolContainer ():
-    """Handles txpool dataframe and analysis methods"""
+class TransactionPoolContainer:
+    '''
+        Handles txpool dataframe and analysis methods
+    '''
 
-    def __init__(self):
+    def __init__(self, web3Provider: Web3):
+        # use this for talking to node
+        self.web3Provider = web3Provider
         self.txpool_df = pd.DataFrame()  # aggregate list of txhashes in txp
         self.txpool_block = pd.DataFrame()  # txp data at block
         self.txpool_by_gp = pd.DataFrame()  # txp data grouped by gp
         self.got_txpool = False
-        # pending tx acquisition method ('geth' or 'parity')
-        self.pending_method = 'geth'
 
-    def _get_pending_tx_hashes(self, try_methods=True):
-        """gets pending transaction hashes and autodetects method for doing so"""
+    def _getPendingTransactionHashes(self) -> List[Any]:
+        '''
+            Gets pending transaction hashes and autodetects method for doing so
+        '''
         try:
             hashlist = []
-            if self.pending_method == 'geth':
-                txpoolcontent = web3.txpool.content
-                txpoolpending = txpoolcontent['pending']
-                for tx_sequence in txpoolpending.values():
-                    for tx_obj in tx_sequence.values():
-                        hashlist.append(tx_obj['hash'])
-                return hashlist
-            elif self.pending_method == 'parity':
-                txpoolpending = web3.manager.request_blocking(
-                    'parity_pendingTransactions', [])
-                for tx_obj in txpoolpending:
-                    hashlist.append(tx_obj['hash'])
-                return hashlist
-        except ValueError as ve:
-            if ve.args[0]['code'] == -32601:  # method not found
-                if try_methods:
-                    self.pending_method = {'geth': 'parity', 'parity': 'geth'}[
-                        self.pending_method]
-                    console.info(
-                        'Switching pending tx acquisition method to '+self.pending_method)
-                    return self._get_pending_tx_hashes(False)
-            raise
+            txpoolcontent = self.web3Provider.txpool.content
+            txpoolpending = txpoolcontent['pending']
 
-    def append_current_txp(self):
-        """gets list of all txhash in txpool at block and appends to dataframe"""
-        current_block = web3.eth.blockNumber
+            for tx_sequence in txpoolpending.values():
+                for tx_obj in tx_sequence.values():
+                    hashlist.append(tx_obj['hash'])
+
+            return hashlist
+        except ValueError:
+            return None
+        except Exception:
+            return None
+
+    def appendCurrentTransactionPool(self):
+        ''''
+            Gets list of all transaction hashes in transaction pool
+            at block and appends them to dataframe
+        '''
+        current_block = self.web3Provider.eth.blockNumber
         try:
-            console.info("getting txpool hashes at block " +
-                         str(current_block) + " ...")
-            hashlist = self._get_pending_tx_hashes()
+
+            print('[*]Getting txpool hashes at block : {}'.format(current_block))
+
+            hashlist = self._getPendingTransactionHashes()
             txpool_current = pd.DataFrame(index=hashlist)
             txpool_current['block'] = current_block
-            console.info("done. length = " + str(len(txpool_current)))
-            self.txpool_df = self.txpool_df.append(
-                txpool_current, ignore_index=False)
-        except Exception as e:
-            console.warn(e)
-            console.warn("txpool empty")
 
-    def make_txpool_block(self, block, alltx):
-        """gets txhash from all transactions in txpool at block and merges the data from alltx"""
+            print("[+]Done. Length of TxPool : {}".format(len(txpool_current)))
+
+            self.txpool_df = self.txpool_df.append(
+                txpool_current,
+                ignore_index=False
+            )
+        except Exception as e:
+            print(e)
+
+    def makeTransactionPoolBlock(self, block, alltx):
+        '''
+            Gets transaction hash from all transactions in transaction pool
+            at block and merges the data from alltx
+        '''
 
         # get txpool hashes at block
         txpool_block = self.txpool_df.loc[self.txpool_df['block'] == block]
@@ -224,12 +231,14 @@ class TxpoolContainer ():
             txpool_block.loc[(txpool_block['chained'] == 1) | (
                 txpool_block['gas_offered'] > 2000000), 'age'] = None
             txpool_block = txpool_block.drop_duplicates(keep='first')
-            console.info('txpool block length ' + str(len(txpool_block)))
+
+            print('txpool block length ' + str(len(txpool_block)))
             self.got_txpool = True
         else:
             txpool_block = alltx.loc[alltx['block_posted'] == block].copy()
-            self.got_txpool = False
-            console.info('txpool skipped')
+            
+            print('txpool skipped')
+            self.got_txpool = False 
 
         if self.got_txpool:
             self.txpool_block = txpool_block
@@ -255,7 +264,7 @@ class TxpoolContainer ():
         else:
             self.txpool_block = pd.DataFrame()
             self.txpool_by_gp = {}
-            console.warn("txpool block empty")
+            print("txpool block empty")
 
     def prune(self, block):
         self.txpool_df = self.txpool_df.loc[self.txpool_df['block'] > (
