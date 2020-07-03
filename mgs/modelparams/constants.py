@@ -9,7 +9,7 @@ You should have about >20k transactions in the database to fit the model accurat
 #hashpower accepting coefficient
 #transactions at or above in txpool coefficient
 #interaction term with highgas offered and hashpower. not currently using
-#highgas offefred coefficient
+#highgas offered coefficient
 
 INTERCEPT = 4.8015
 HPA_COEF = -0.0243
@@ -21,4 +21,3 @@ HPA_COEF2 = -0.0670
 
 # Highest gas price tracked
 MAX_GP = 50000
-
