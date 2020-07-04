@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from web3 import Web3, HTTPProvider, WebsocketProvider
+from web3.middleware import geth_poa_middleware
 
 
 def connectToHTTPEndPointUsingURI(uri: str) -> Web3:
@@ -66,6 +67,16 @@ def connectToWebSocketEndPoint(protocol: str, hostname: str, port: str) -> Web3:
         return None
 
     return Web3(WebsocketProvider('{}://{}:{}'.format(protocol, hostname, port)))
+
+
+def injectPoAMiddleWare(provider: Web3):
+    '''
+        While talking to PoA based endpoint, web3 requires this
+        onion layer, which is to be used while passing JSON RPC requests/ responses
+
+        Consider passing your provider instance through this function, to get that facility
+    '''
+    provider.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 if __name__ == '__main__':
