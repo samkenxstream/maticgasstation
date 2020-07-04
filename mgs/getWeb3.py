@@ -4,6 +4,16 @@ from __future__ import annotations
 from web3 import Web3, HTTPProvider, WebsocketProvider
 
 
+def connectToHTTPEndPointUsingURI(uri: str) -> Web3:
+    '''
+        Given a preformatted HTTP URI, returns web3 connection 
+    '''
+    if not uri:
+        return None
+
+    return Web3(HTTPProvider(uri))
+
+
 def connectToHTTPEndPoint(protocol: str, hostname: str, port: str) -> Web3:
     '''
         Connects to an HTTP RPC endpoint, all args are required
@@ -24,6 +34,16 @@ def connectToHTTPEndPoint(protocol: str, hostname: str, port: str) -> Web3:
         return None
 
     return Web3(HTTPProvider('{}://{}:{}'.format(protocol, hostname, port)))
+
+
+def connectToWebSocketEndPointUsingURI(uri: str) -> Web3:
+    '''
+        Given a preformatted WebSocket URI, returns web3 connection 
+    '''
+    if not uri:
+        return None
+
+    return Web3(WebsocketProvider(uri))
 
 
 def connectToWebSocketEndPoint(protocol: str, hostname: str, port: str) -> Web3:
