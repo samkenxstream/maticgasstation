@@ -12,12 +12,11 @@ def validateConfig(config: Dict[str, int]) -> bool:
     '''
         Given parsed content of config file, validates it
         and returns true on success, else false
+
+        Note: This needs to be satisfied, safelow < standard < fast
     '''
     def _validateThreshold(key: str) -> bool:
         return config[key] >= 0 and config[key] <= 100
-
-    def _sumsTo100(keys: List[str]) -> bool:
-        return ceil(reduce(lambda acc, cur: acc + config[cur], keys, 0)) == 100
 
     if not config:
         return False
@@ -26,7 +25,8 @@ def validateConfig(config: Dict[str, int]) -> bool:
         return _validateThreshold('safelow') and\
             _validateThreshold('standard') and\
             _validateThreshold('fast') and\
-            _sumsTo100(['safelow', 'standard', 'fast'])
+            (config['safelow'] < config['standard'] and
+             config['standard'] < config['fast'])
     except Exception:
         return False
 

@@ -1,0 +1,17 @@
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+module = "mgs"
+author = "Anjan Roy"
+author-email = "anjanroy@yandex.com"
+home-page = "https://github.com/maticnetwork/maticgasstation"
+requires-python=">=3.7"
+requires=["pandas", "web3"]
+
+[tool.flit.metadata.requires-extra]
+dev = ["flit"]
+
+[tool.flit.scripts]
+maticGS = "mgs.main:main"
