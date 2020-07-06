@@ -5,7 +5,9 @@ from pandas import DataFrame
 from web3 import Web3
 from web3.datastructures import AttributeDict
 from typing import Tuple
+from math import nan
 from .model.transaction import Transaction
+from .model.block import Block
 
 
 def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, AttributeDict]:
@@ -31,6 +33,20 @@ def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, A
         return(blockDF, blockObj)
     except Exception:
         return (None, None)
+
+
+def processBlockData(blockDF: DataFrame, blockObj: AttributeDict) -> DataFrame:
+    '''
+        Processes block data and puts into dataframe
+    '''
+
+    blockMinGasPrice = blockDF['gasPrice10GWei'].min() if len(
+        blockObj.transactions) > 0 else nan
+
+    timestamp = blockDF['timestamp'].min()
+    block = Block(blockObj, timestamp, blockMinGasPrice)
+
+    return block.toDataFrame()
 
 
 if __name__ == '__main__':
