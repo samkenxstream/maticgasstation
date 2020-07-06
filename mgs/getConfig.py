@@ -47,6 +47,10 @@ def parseConfig(src: str) -> Dict[str, int]:
         if not _config:
             return None
 
+        # first validates, if okay, only then instance is returned
+        if not validateConfig(_config):
+            return None
+
         return _config
     except Exception:
         return None
