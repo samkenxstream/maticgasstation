@@ -34,7 +34,7 @@ def connectToHTTPEndPoint(protocol: str, hostname: str, port: str) -> Web3:
     if port not in range(1, 2**16):
         return None
 
-    return Web3(HTTPProvider('{}://{}:{}'.format(protocol, hostname, port)))
+    return connectToHTTPEndPointUsingURI('{}://{}:{}'.format(protocol, hostname, port))
 
 
 def connectToWebSocketEndPointUsingURI(uri: str) -> Web3:
@@ -66,7 +66,7 @@ def connectToWebSocketEndPoint(protocol: str, hostname: str, port: str) -> Web3:
     if port not in range(1, 2**16):
         return None
 
-    return Web3(WebsocketProvider('{}://{}:{}'.format(protocol, hostname, port)))
+    return connectToWebSocketEndPointUsingURI('{}://{}:{}'.format(protocol, hostname, port))
 
 
 def injectPoAMiddleWare(provider: Web3):
@@ -80,4 +80,4 @@ def injectPoAMiddleWare(provider: Web3):
 
 
 if __name__ == '__main__':
-    pass
+    print('It is not supposed to be used that way !')
