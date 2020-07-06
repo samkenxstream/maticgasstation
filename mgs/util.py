@@ -49,5 +49,20 @@ def processBlockData(blockDF: DataFrame, blockObj: AttributeDict) -> DataFrame:
     return block.toDataFrame()
 
 
+def getHPA(gasprice: int, hashpower: DataFrame):
+    '''
+        Returns the hash power accepting the gas price over last 200 blocks
+    '''
+    hpa = hashpower.loc[gasprice >= hashpower.index, 'hashp_pct']
+    if gasprice > hashpower.index.max():
+        hpa = 100
+    elif gasprice < hashpower.index.min():
+        hpa = 0
+    else:
+        hpa = hpa.max()
+
+    return int(hpa)
+
+
 if __name__ == '__main__':
     print('It is not supposed to be used that way !')
