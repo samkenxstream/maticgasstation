@@ -1,9 +1,34 @@
 #!/usr/bin/python3
 
 from __future__ import annotations
-from typing import Dict
+from typing import Dict, List
 from os.path import exists
 from json import load
+from functools import reduce
+from math import ceil
+
+
+def validateConfig(config: Dict[str, int]) -> bool:
+    '''
+        Given parsed content of config file, validates it
+        and returns true on success, else false
+    '''
+    def _validateThreshold(key: str) -> bool:
+        return config[key] >= 0 and config[key] <= 100
+
+    def _sumsTo100(keys: List[str]) -> bool:
+        return ceil(reduce(lambda acc, cur: acc + config[cur], keys, 0)) == 100
+
+    if not config:
+        return False
+
+    try:
+        return _validateThreshold('safelow') and\
+            _validateThreshold('standard') and\
+            _validateThreshold('fast') and\
+            _sumsTo100(['safelow', 'standard', 'fast'])
+    except Exception:
+        return False
 
 
 def parseConfig(src: str) -> Dict[str, int]:
