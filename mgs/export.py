@@ -16,7 +16,7 @@ def toJSON(gprecs: Dict[str, Any], predictionTable, sinkForGasPrice: str, sinkFo
         # writing JSON formatted gas prices for
         # {safelow, standard, fast} thresholds to sink
         with open(sinkForGasPrice, 'w') as fd:
-            dump(gprecs, fd)
+            dump(gprecs, fd, indent=4)
 
         # writing JSON formatted prediction table output to sink
         with open(sinkForPredictionTable, 'w') as fd:

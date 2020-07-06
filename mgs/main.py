@@ -108,7 +108,10 @@ def main(remote: str) -> bool:
     if not (configFile and sinkForGasPrice and sinkForPredictionTable):
         return False
 
-    if not exists(configFile):
+    if not (sinkForGasPrice.endswith('.json') and sinkForPredictionTable.endswith('.json')):
+        return False
+
+    if not (exists(configFile) and configFile.endswith('.json')):
         return False
 
     config = parseConfig(configFile)
