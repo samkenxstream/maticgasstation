@@ -94,5 +94,19 @@ def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> Tuple[DataFr
     return(hashpower, avg_timemined)
 
 
+def makePredictionTable(block: int, alltx: DataFrame, hashpower: DataFrame, avg_timemined: float) -> DataFrame:
+    '''
+        Generates prediction table
+    '''
+    predictTable = DataFrame({'gasPrice':  range(10, 1010, 10)})
+    ptable2 = DataFrame({'gasPrice': range(0, 10, 1)})
+    predictTable = predictTable.append(ptable2).reset_index(drop=True)
+    predictTable = predictTable.sort_values('gasPrice').reset_index(drop=True)
+    predictTable['hashpower_accepting'] = predictTable['gasPrice'].apply(
+        getHPA, args=(hashpower,))
+
+    return predictTable
+
+
 if __name__ == '__main__':
     print('It is not supposed to be used that way !')
