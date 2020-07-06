@@ -5,7 +5,7 @@ from pandas import DataFrame
 from web3 import Web3
 from web3.datastructures import AttributeDict
 from typing import Tuple
-from math import nan
+from math import nan, isnan
 from .model.transaction import Transaction
 from .model.block import Block
 
@@ -49,7 +49,7 @@ def processBlockData(blockDF: DataFrame, blockObj: AttributeDict) -> DataFrame:
     return block.toDataFrame()
 
 
-def getHPA(gasprice: int, hashpower: DataFrame):
+def getHPA(gasprice: int, hashpower: DataFrame) -> int:
     '''
         Returns the hash power accepting the gas price over last 200 blocks
     '''
@@ -62,6 +62,36 @@ def getHPA(gasprice: int, hashpower: DataFrame):
         hpa = hpa.max()
 
     return int(hpa)
+
+
+def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> Tuple[DataFrame, float]:
+    '''
+        analyses last X number of blocks, returns `hash power accepting dataframe`
+        and average block interval time for last X blocks
+    '''
+    if not (x > 0):
+        return (None, None)
+
+    recentBlocks = blockData.loc[blockData['blockNumber'] > (block-x),
+                                 ['minGasPrice', 'blockNumber']]
+
+    # create hashpower accepting dataframe based on mingasprice accepted in block
+    hashpower = recentBlocks.groupby('minGasPrice').count()
+    hashpower = hashpower.rename(columns={'blockNumber': 'count'})
+    hashpower['cumBlocks'] = hashpower['count'].cumsum()
+    totalblocks = hashpower['count'].sum()
+    hashpower['hashp_pct'] = hashpower['cumBlocks']/totalblocks*100
+
+    # get avg blockinterval time
+    blockinterval = recentBlocks.sort_values('blockNumber').diff()
+    blockinterval.loc[blockinterval['blockNumber'] > 1, 'timestamp'] = nan
+    blockinterval.loc[blockinterval['timestamp'] < 0, 'timestamp'] = nan
+
+    avg_timemined = blockinterval['timestamp'].mean()
+    if isnan(avg_timemined):
+        avg_timemined = 15
+
+    return(hashpower, avg_timemined)
 
 
 if __name__ == '__main__':
