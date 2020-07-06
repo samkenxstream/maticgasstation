@@ -22,7 +22,7 @@ class Transaction:
 
     def toDataFrame(self) -> DataFrame:
         '''
-            Utility function to convert to dataframeI
+            Utility function to convert to dataframe
         '''
         return DataFrame.from_dict(
             {self.hash: {'blockMined': self.blockMined,
