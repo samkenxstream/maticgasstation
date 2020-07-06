@@ -5,10 +5,15 @@ from pandas import DataFrame
 from web3 import Web3
 from typing import Dict, Tuple
 from .model.transaction import Transaction
+from .model.timers import Timers
 from .util import (
     processBlockTransactions,
-    processBlockData
+    processBlockData,
+    analyzeLastXblocks,
+    makePredictionTable,
+    getGasPriceRecommendations
 )
+from .export import toJSON
 
 
 def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
@@ -49,6 +54,37 @@ def appendNewTransaction(allTx: DataFrame, newTx: Transaction) -> DataFrame:
         alltx = alltx.append(newTx.to_dataframe(), ignore_index=False)
 
     return allTx
+
+
+def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, timers: Timers, provider: Web3, x: int, config: Dict[str, int], sinkForGasPrice: str, sinkForPredictionTable: str):
+    '''
+        Adds new block data to main dataframes {allTx, blockData}, and releases 
+        recommended gas prices while considering this block
+    '''
+    try:
+        mined_block_num = block-3
+
+        (mined_blockdf, block_obj) = processBlockTransactions(
+            mined_block_num,
+            provider)
+        allTx = allTx.combine_first(mined_blockdf)
+
+        block_sumdf = processBlockData(mined_blockdf, block_obj)
+
+        blockData = blockData.append(block_sumdf, ignore_index=True)
+
+        (hashpower, block_time) = analyzeLastXblocks(block, blockData, x)
+        predictiondf = makePredictionTable(block, allTx, hashpower, block_time)
+
+        toJSON(getGasPriceRecommendations(predictiondf,
+                                          block_time,
+                                          block,
+                                          config),
+               predictiondf,
+               sinkForGasPrice,
+               sinkForPredictionTable)
+    except Exception as e:
+        print('[+]Error: {}'.format(e))
 
 
 def main():
