@@ -4,7 +4,7 @@ from __future__ import annotations
 from pandas import DataFrame
 from web3 import Web3
 from web3.datastructures import AttributeDict
-from typing import Tuple
+from typing import Tuple, Dict, Any
 from math import nan, isnan
 from .model.transaction import Transaction
 from .model.block import Block
@@ -106,6 +106,45 @@ def makePredictionTable(block: int, alltx: DataFrame, hashpower: DataFrame, avg_
         getHPA, args=(hashpower,))
 
     return predictTable
+
+
+def getGasPriceRecommendations(prediction_table: DataFrame, block_time: float, block: int, config: Dict[str, int]) -> Dict[str, Any]:
+    '''
+        Generates gas price recommendation report as dictionary
+    '''
+    def get_safelow():
+        series = prediction_table.loc[prediction_table['hashpower_accepting']
+                                      >= config.get('safelow'), 'gasPrice']
+        safelow = series.min()
+        return float(safelow)
+
+    def get_average():
+        series = prediction_table.loc[prediction_table['hashpower_accepting']
+                                      >= config.get('standard'), 'gasPrice']
+        average = series.min()
+        return float(average)
+
+    def get_fast():
+        series = prediction_table.loc[prediction_table['hashpower_accepting']
+                                      >= config.get('fast'), 'gasPrice']
+        fastest = series.min()
+        return float(fastest)
+
+    def get_fastest():
+        hpmax = prediction_table['hashpower_accepting'].max()
+        fastest = prediction_table.loc[prediction_table['hashpower_accepting']
+                                       == hpmax, 'gasPrice'].values[0]
+        return float(fastest)
+
+    gprecs = {}
+    gprecs['safeLow'] = get_safelow()/10
+    gprecs['standard'] = get_average()/10
+    gprecs['fast'] = get_fast()/10
+    gprecs['fastest'] = get_fastest()/10
+    gprecs['block_time'] = block_time
+    gprecs['blockNum'] = block
+
+    return gprecs
 
 
 if __name__ == '__main__':
