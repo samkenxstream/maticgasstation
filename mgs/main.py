@@ -4,6 +4,7 @@ from __future__ import annotations
 from pandas import DataFrame
 from web3 import Web3
 from typing import Dict, Tuple
+from .model.transaction import Transaction
 from .util import (
     processBlockTransactions,
     processBlockData
@@ -38,6 +39,16 @@ def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[Da
     print("**** And the oracle says...**** \n")
 
     return allTx, blockData
+
+
+def appendNewTransaction(allTx: DataFrame, newTx: Transaction) -> DataFrame:
+    '''
+        Appends new transactions in all transaction holder data frameI
+    '''
+    if newTx.hash not in allTx.index:
+        alltx = alltx.append(newTx.to_dataframe(), ignore_index=False)
+
+    return allTx
 
 
 def main():
