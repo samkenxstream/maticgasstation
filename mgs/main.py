@@ -97,7 +97,7 @@ def _getCMDArg() -> Tuple[str, str, str]:
     return tuple(argv[1:]) if len(argv) == 4 else (None, None, None)
 
 
-def main(remote: str) -> bool:
+def main(remote: str = 'https://rpc-mumbai.matic.today') -> bool:
     '''
         Main entry point of app
 
