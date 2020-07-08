@@ -22,9 +22,9 @@ from .getWeb3 import (
 from .getConfig import (
     parseConfig,
 )
-from sys import argv
 from os.path import exists
 from time import sleep
+from argparse import ArgumentParser
 
 
 def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
@@ -87,14 +87,30 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
         print('[!]Error: {}'.format(e))
 
 
-def _getCMDArg() -> Tuple[str, str, str]:
+def _getCMDArgs() -> Tuple[str, str]:
     '''
         While invoking script, config file path needs to be passed
-        along with sink filepaths for gasprice and prediction table
+        along with sink filepaths for gasprice
 
-        All of them needs to be json formatted
+        Expecting both of them to have JSON extension
     '''
-    return tuple(argv[1:]) if len(argv) == 4 else (None, None, None)
+    parser = ArgumentParser()
+    parser.add_argument('config_file', type=str,
+                        help='Path to configuration file ( JSON )')
+    parser.add_argument('sink_for_gas_price', type=str,
+                        help='Path to sink file, for putting recommened gas prices ( JSON )')
+
+    args = parser.parse_args()
+
+    if not (args.config_file and args.sink_for_gas_price):
+        return (None, None)
+
+    if not (args.config_file.endswith('.json') and
+            exists(args.config_file) and
+            args.sink_for_gas_price.endswith('.json')):
+        return (None, None)
+
+    return args.config_file, args.sink_for_gas_price
 
 
 def main(remote: str = 'https://rpc-mumbai.matic.today') -> bool:
@@ -103,16 +119,13 @@ def main(remote: str = 'https://rpc-mumbai.matic.today') -> bool:
 
         Remote RPC endpoint needs to be supplied as URI
     '''
-    configFile, sinkForGasPrice, sinkForPredictionTable = _getCMDArg()
+    configFile, sinkForGasPrice = _getCMDArgs()
 
-    if not (configFile and sinkForGasPrice and sinkForPredictionTable):
+    if not (configFile and sinkForGasPrice):
+        print('Failed')
         return False
 
-    if not (sinkForGasPrice.endswith('.json') and sinkForPredictionTable.endswith('.json')):
-        return False
-
-    if not (exists(configFile) and configFile.endswith('.json')):
-        return False
+    return True
 
     config = parseConfig(configFile)
     if not config:
