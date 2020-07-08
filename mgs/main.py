@@ -129,8 +129,11 @@ def main() -> bool:
         print('[!]Bad config !')
         return False
 
-    provider = connectToHTTPEndPointUsingURI(config['rpc'])
+    provider = connectToHTTPEndPointUsingURI(config['rpc']) if config['rpc'].startswith(
+        'http') else connectToWebSocketEndPointUsingURI(
+            config['rpc']) if config['rpc'].startswith('ws') else None
     if not provider:
+        print('[!]Bad RPC provider !')
         return False
 
     # this line is required when talking to node which is part of network using
