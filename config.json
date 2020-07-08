@@ -1,5 +1,6 @@
 {
     "safelow": 35,
     "standard": 60,
-    "fast": 90
+    "fast": 90,
+    "rpc": "wss://ws-mumbai.matic.today/"
 }

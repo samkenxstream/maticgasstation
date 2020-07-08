@@ -113,25 +113,23 @@ def _getCMDArgs() -> Tuple[str, str]:
     return args.config_file, args.sink_for_gas_price
 
 
-def main(remote: str = 'https://rpc-mumbai.matic.today') -> bool:
+def main() -> bool:
     '''
         Main entry point of app
 
         Remote RPC endpoint needs to be supplied as URI
     '''
     configFile, sinkForGasPrice = _getCMDArgs()
-
     if not (configFile and sinkForGasPrice):
-        print('Failed')
+        print('[!]Bad invocation !')
         return False
-
-    return True
 
     config = parseConfig(configFile)
     if not config:
+        print('[!]Bad config !')
         return False
 
-    provider = connectToHTTPEndPointUsingURI(remote)
+    provider = connectToHTTPEndPointUsingURI(config['rpc'])
     if not provider:
         return False
 
@@ -160,7 +158,7 @@ def main(remote: str = 'https://rpc-mumbai.matic.today') -> bool:
                                  200,
                                  config,
                                  sinkForGasPrice,
-                                 sinkForPredictionTable)
+                                 '')
                 timers.processBlock += 1
         except KeyboardInterrupt:
             print('\n[!]Terminated')
@@ -175,4 +173,4 @@ def main(remote: str = 'https://rpc-mumbai.matic.today') -> bool:
 
 
 if __name__ == '__main__':
-    main('http://localhost:8545')
+    main()
