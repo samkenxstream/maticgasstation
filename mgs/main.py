@@ -5,7 +5,7 @@ from pandas import DataFrame
 from web3 import Web3
 from typing import Dict, Tuple
 from .model.transaction import Transaction
-from .model.timers import Timers
+from .model.blockTracker import BlockTracker
 from .util import (
     processBlockTransactions,
     processBlockData,
@@ -22,144 +22,169 @@ from .getWeb3 import (
 from .getConfig import (
     parseConfig,
 )
-from sys import argv
 from os.path import exists
-from time import sleep
+from time import sleep, time
+from argparse import ArgumentParser
 
 
-def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
+def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
     allTx = DataFrame()
     blockData = DataFrame()
 
-    print("[+]MATIC Gas Station\n")
-    print("\n[*]Safelow = {} % of blocks accepting. Usually confirms in less than 30min.".format(
-        config.get('safelow')))
-    print("\n[*]Standard = {} % of blocks accepting. Usually confirms in less than 5min.".format(
-        config.get('standard')))
-    print("\n[*]Fast = {} % of blocks accepting. Usually confirms in less than 1min.".format(
-        config.get('fast')))
-    print("\n[*]Fastest = all blocks accepting.  As fast as possible but you are probably overpaying.")
+    print('[*]Loading past {} non-empty blocks ...'.format(x))
 
-    print("\n[*]Now loading gasprice data from last {} blocks ...".format(x))
+    _done = 0
+    while(_done < x):
+        try:
+            (mined_blockdf, block_obj) = processBlockTransactions(block, provider)
 
-    for pastblock in range((block - x), (block), 1):
-        (mined_blockdf, block_obj) = processBlockTransactions(pastblock, provider)
+            if not (not mined_blockdf.empty and block_obj):
+                block -= 1
+                print('[-]Empty block : {} !'.format(block))
+                continue
 
-        allTx = allTx.combine_first(mined_blockdf)
+            print('[+]Fetched block : {}'.format(block))
+            allTx = allTx.combine_first(mined_blockdf)
 
-        block_sumdf = processBlockData(mined_blockdf, block_obj)
-        blockData = blockData.append(block_sumdf, ignore_index=True)
+            block_sumdf = processBlockData(mined_blockdf, block_obj)
+            blockData = blockData.append(block_sumdf, ignore_index=True)
 
-    print("\nPress ctrl-c at any time to stop monitoring\n")
-    print("**** And the oracle says...**** \n")
+            _done += 1
+        except Exception:
+            pass
+        finally:
+            block -= 1
 
     return allTx, blockData
 
 
-def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, x: int, config: Dict[str, int], sinkForGasPrice: str, sinkForPredictionTable: str):
+def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, config: Dict[str, Any], sinkForGasPrice: str):
     '''
         Adds new block data to main dataframes {allTx, blockData}, and releases 
         recommended gas prices while considering this block
     '''
     try:
-        mined_block_num = block-3
-
         (mined_blockdf, block_obj) = processBlockTransactions(
-            mined_block_num,
+            block,
             provider)
         allTx = allTx.combine_first(mined_blockdf)
 
         block_sumdf = processBlockData(mined_blockdf, block_obj)
 
-        blockData = blockData.append(block_sumdf, ignore_index=True)
+        blockData = blockData.append(
+            block_sumdf, ignore_index=True)
 
-        (hashpower, block_time) = analyzeLastXblocks(block, blockData, x)
+        (hashpower, block_time) = analyzeLastXblocks(
+            block, blockData, int(config['pastBlockCount']))
         predictiondf = makePredictionTable(block, allTx, hashpower, block_time)
 
         toJSON(getGasPriceRecommendations(predictiondf,
                                           block_time,
                                           block,
                                           config),
-               predictiondf,
-               sinkForGasPrice,
-               sinkForPredictionTable)
-    except Exception as e:
-        print('[!]Error: {}'.format(e))
+               sinkForGasPrice)
+    except Exception:
+        pass
 
 
-def _getCMDArg() -> Tuple[str, str, str]:
+def _getCMDArgs() -> Tuple[str, str]:
     '''
         While invoking script, config file path needs to be passed
-        along with sink filepaths for gasprice and prediction table
+        along with sink filepaths for gasprice
 
-        All of them needs to be json formatted
+        Expecting both of them to have JSON extension
     '''
-    return tuple(argv[1:]) if len(argv) == 4 else (None, None, None)
+    parser = ArgumentParser()
+    parser.add_argument('config_file', type=str,
+                        help='Path to configuration file ( JSON )')
+    parser.add_argument('sink_for_gas_price', type=str,
+                        help='Path to sink file, for putting recommened gas prices ( JSON )')
+
+    args = parser.parse_args()
+
+    if not (args.config_file and args.sink_for_gas_price):
+        return (None, None)
+
+    if not (args.config_file.endswith('.json') and
+            exists(args.config_file) and
+            args.sink_for_gas_price.endswith('.json')):
+        return (None, None)
+
+    return args.config_file, args.sink_for_gas_price
 
 
-def main(remote: str) -> bool:
+def main() -> bool:
     '''
         Main entry point of app
 
         Remote RPC endpoint needs to be supplied as URI
     '''
-    configFile, sinkForGasPrice, sinkForPredictionTable = _getCMDArg()
-
-    if not (configFile and sinkForGasPrice and sinkForPredictionTable):
-        return False
-
-    if not (sinkForGasPrice.endswith('.json') and sinkForPredictionTable.endswith('.json')):
-        return False
-
-    if not (exists(configFile) and configFile.endswith('.json')):
+    configFile, sinkForGasPrice = _getCMDArgs()
+    if not (configFile and sinkForGasPrice):
+        print('[!]Bad invocation !')
         return False
 
     config = parseConfig(configFile)
     if not config:
+        print('[!]Bad config !')
         return False
 
-    provider = connectToHTTPEndPointUsingURI(remote)
+    provider = connectToHTTPEndPointUsingURI(config['rpc']) if config['rpc'].startswith(
+        'http') else connectToWebSocketEndPointUsingURI(
+            config['rpc']) if config['rpc'].startswith('ws') else None
     if not provider:
+        print('[!]Bad RPC provider !')
         return False
 
     # this line is required when talking to node which is part of network using
-    # PoA based consensus mechanism i.e. Matic/ Goerli/ Ropsten
+    # PoA based consensus mechanism i.e. Goerli/ Ropsten
     #
     # If it does cause issue, please consider commenting immediate below line
-    injectPoAMiddleWare(provider)
+    #
+    # Note: NOT REQUIRED AS OF NOW
+    # injectPoAMiddleWare(provider)
 
+    start = time()
     _blockNumber = provider.eth.blockNumber
-    timers = Timers(_blockNumber)
+    blockTracker = BlockTracker(_blockNumber)
 
     # initializing by fetching last 100 blocks of data
-    allTx, blockData = init(_blockNumber, config, 100, provider)
+    allTx, blockData = init(_blockNumber, int(
+        config['pastBlockCount']), provider)
+
+    if allTx.empty and blockData.empty:
+        print('[!]Initialization failed !')
+        return False
+
+    print('[+]Initialization completed in : {} s\n'.format(time() - start))
+
+    blockTracker.currentBlockId = provider.eth.blockNumber
 
     while True:
         try:
-            _blockNumber = provider.eth.blockNumber
-            if (timers.processBlock < _blockNumber):
+
+            if (blockTracker._currentBlockId <= provider.eth.blockNumber):
                 # updating data frame content, analyzing last 200 blocks,
                 # generating results, putting them into sink files
-                updateDataFrames(timers.processBlock,
+                updateDataFrames(blockTracker._currentBlockId,
                                  allTx,
                                  blockData,
                                  provider,
-                                 200,
                                  config,
-                                 sinkForGasPrice,
-                                 sinkForPredictionTable)
-                timers.processBlock += 1
-        except KeyboardInterrupt:
-            print('\n[!]Terminated')
-            break
-        except Exception as e:
-            print('[!]Error: {}'.format(e))
+                                 sinkForGasPrice)
 
-        # sleep for 1 second, and then go for next iteration
-        sleep(1)
+                print(
+                    '[+]Considered upto latest block : {}'.format(blockTracker.currentBlockId))
+                blockTracker.currentBlockId = blockTracker.currentBlockId + 1
+
+        except Exception as e:
+            print('[!]{}'.format(e))
+
+        # sleep for 3 second, and then go for next iteration
+        sleep(3)
 
     return True
 
 
 if __name__ == '__main__':
-    main('http://localhost:8545')
+    main()

@@ -1,19 +1,22 @@
 #!/usr/bin/python3
 
 from __future__ import annotations
-from typing import Dict, List
+from typing import Dict, List, Any
 from os.path import exists
 from json import load
 from functools import reduce
 from math import ceil
 
 
-def validateConfig(config: Dict[str, int]) -> bool:
+def validateConfig(config: Dict[str, Any]) -> bool:
     '''
         Given parsed content of config file, validates it
         and returns true on success, else false
 
         Note: This needs to be satisfied, safelow < standard < fast
+
+        RPC endpoint to be used for connection needs to be passed under
+        `rpc` key
     '''
     def _validateThreshold(key: str) -> bool:
         return config[key] >= 0 and config[key] <= 100
@@ -26,12 +29,14 @@ def validateConfig(config: Dict[str, int]) -> bool:
             _validateThreshold('standard') and\
             _validateThreshold('fast') and\
             (config['safelow'] < config['standard'] and
-             config['standard'] < config['fast'])
+             config['standard'] < config['fast']) and\
+            config['rpc'] and\
+            int(config['pastBlockCount']) > 0
     except Exception:
         return False
 
 
-def parseConfig(src: str) -> Dict[str, int]:
+def parseConfig(src: str) -> Dict[str, Any]:
     '''
         Given path to config file, returns a dictionary
         holding keys and corresponding values

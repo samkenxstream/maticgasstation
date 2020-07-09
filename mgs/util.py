@@ -17,18 +17,21 @@ def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, A
         which is returned
 
         A 2-element tuple is returned i.e. block
+
+        If block is empty, returns tuple of None - needs to be handled properly
     '''
     try:
-        blockDF = DataFrame()
         blockObj = provider.eth.getBlock(blockId, True)
+        if not len(blockObj.transactions):
+            return (None, None)
+
+        blockDF = DataFrame()
 
         for i in blockObj.transactions:
             tx = Transaction(i)
             blockDF = blockDF.append(
                 tx.toDataFrame(),
                 ignore_index=False)
-
-        blockObj['timestamp'] = blockObj.timestamp
 
         return(blockDF, blockObj)
     except Exception:
@@ -43,8 +46,7 @@ def processBlockData(blockDF: DataFrame, blockObj: AttributeDict) -> DataFrame:
     blockMinGasPrice = blockDF['gasPrice10GWei'].min() if len(
         blockObj.transactions) > 0 else nan
 
-    timestamp = blockDF['timestamp'].min()
-    block = Block(blockObj, timestamp, blockMinGasPrice)
+    block = Block(blockObj, blockObj.timestamp, blockMinGasPrice)
 
     return block.toDataFrame()
 
@@ -53,15 +55,19 @@ def getHPA(gasprice: int, hashpower: DataFrame) -> int:
     '''
         Returns the hash power accepting the gas price over last 200 blocks
     '''
-    hpa = hashpower.loc[gasprice >= hashpower.index, 'hashp_pct']
-    if gasprice > hashpower.index.max():
-        hpa = 100
-    elif gasprice < hashpower.index.min():
-        hpa = 0
-    else:
-        hpa = hpa.max()
 
-    return int(hpa)
+    try:
+        hpa = hashpower.loc[gasprice >= hashpower.index, 'hashp_pct']
+        if gasprice > hashpower.index.max():
+            hpa = 100
+        elif gasprice < hashpower.index.min():
+            hpa = 0
+        else:
+            hpa = hpa.max()
+
+        return int(hpa)
+    except Exception:
+        return 50
 
 
 def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> Tuple[DataFrame, float]:
@@ -72,7 +78,7 @@ def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> Tuple[DataFr
     if not (x > 0):
         return (None, None)
 
-    recentBlocks = blockData.loc[blockData['blockNumber'] > (block-x),
+    recentBlocks = blockData.loc[blockData['blockNumber'] >= (block-x),
                                  ['minGasPrice', 'blockNumber']]
 
     # create hashpower accepting dataframe based on mingasprice accepted in block

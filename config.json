@@ -1,5 +1,7 @@
 {
     "safelow": 35,
     "standard": 60,
-    "fast": 90
+    "fast": 90,
+    "rpc": "wss://testnetv3-wss.matic.network",
+    "pastBlockCount": 200
 }
