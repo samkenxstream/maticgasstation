@@ -31,29 +31,30 @@ def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[Da
     allTx = DataFrame()
     blockData = DataFrame()
 
-    print('[+]Loading past {} blocks ...'.format(x))
+    print('[*]Loading past {} non-empty blocks ...'.format(x))
 
-    _done = 0
-    while(_done < x):
-        (mined_blockdf, block_obj) = processBlockTransactions(block, provider)
+    try:
+        _done = 0
+        while(_done < x):
+            (mined_blockdf, block_obj) = processBlockTransactions(block, provider)
 
-        if not (mined_blockdf and block_obj):
+            if not (mined_blockdf and block_obj):
+                block -= 1
+                print('[-]Empty block !')
+                continue
+
+            print('[+]Fetched block : {}'.format(block))
+            allTx = allTx.combine_first(mined_blockdf)
+
+            block_sumdf = processBlockData(mined_blockdf, block_obj)
+            blockData = blockData.append(block_sumdf, ignore_index=True)
+
+            _done += 1
             block -= 1
-            print('Empty block !')
-            continue
 
-        print('[*]Fetched block : {}'.format(block))
-        allTx = allTx.combine_first(mined_blockdf)
-
-        block_sumdf = processBlockData(mined_blockdf, block_obj)
-        blockData = blockData.append(block_sumdf, ignore_index=True)
-
-        _done += 1
-        block -= 1
-
-    print("[+]Results ...")
-
-    return allTx, blockData
+        return allTx, blockData
+    except Exception:
+        return None, None
 
 
 def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, x: int, config: Dict[str, int], sinkForGasPrice: str, sinkForPredictionTable: str):
@@ -62,8 +63,7 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
         recommended gas prices while considering this block
     '''
     try:
-        mined_block_num = block-3
-
+        mined_block_num = block
         (mined_blockdf, block_obj) = processBlockTransactions(
             mined_block_num,
             provider)
@@ -149,10 +149,16 @@ def main() -> bool:
     blockTracker = BlockTracker(_blockNumber)
 
     # initializing by fetching last 100 blocks of data
-    allTx, blockData = init(_blockNumber, config, 100, provider)
+    allTx, blockData = init(_blockNumber, config, 10, provider)
+
+    if not (allTx and blockData):
+        print('[!]Initialization failed !')
+        return False
 
     print('Looks good, done in : {} s'.format(time() - start))
     return True
+
+    blockTracker.currentBlockId = provider.eth.blockNumber - 1
 
     while True:
         try:
