@@ -17,10 +17,15 @@ def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, A
         which is returned
 
         A 2-element tuple is returned i.e. block
+
+        If block is empty, returns tuple of None - needs to be handled properly
     '''
     try:
-        blockDF = DataFrame()
         blockObj = provider.eth.getBlock(blockId, True)
+        if not len(blockObj.transactions):
+            return (None, None)
+
+        blockDF = DataFrame()
 
         for i in blockObj.transactions:
             tx = Transaction(i)
