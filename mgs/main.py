@@ -71,7 +71,8 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
 
         block_sumdf = processBlockData(mined_blockdf, block_obj)
 
-        blockData = blockData.append(block_sumdf, ignore_index=True)
+        blockData = blockData.append(
+            block_sumdf, ignore_index=True)
 
         (hashpower, block_time) = analyzeLastXblocks(block, blockData, x)
         predictiondf = makePredictionTable(block, allTx, hashpower, block_time)
@@ -147,15 +148,15 @@ def main() -> bool:
     blockTracker = BlockTracker(_blockNumber)
 
     # initializing by fetching last 100 blocks of data
-    allTx, blockData = init(_blockNumber, config, 10, provider)
+    allTx, blockData = init(_blockNumber, config, 5, provider)
 
     if allTx.empty and blockData.empty:
         print('[!]Initialization failed !')
         return False
 
-    print('Initialization completed in : {} s'.format(time() - start))
+    print('[+]Initialization completed in : {} s\n'.format(time() - start))
 
-    blockTracker.currentBlockId = provider.eth.blockNumber - 1
+    blockTracker.currentBlockId = provider.eth.blockNumber
 
     while True:
         try:
@@ -167,16 +168,15 @@ def main() -> bool:
                                  allTx,
                                  blockData,
                                  provider,
-                                 10,
+                                 5,
                                  config,
                                  sinkForGasPrice)
+                
+                print(allTx.shape, blockData.shape)
+                print(
+                    '[+]Explored latest block : {}'.format(blockTracker.currentBlockId))
+                blockTracker.currentBlockId = blockTracker.currentBlockId + 1
 
-                print('[+]Latest recommended gas price : {}'.format(sinkForGasPrice))
-
-                blockTracker._currentBlockId = blockTracker.currentBlockId + 1
-        except KeyboardInterrupt:
-            print('\n[!]Terminated')
-            break
         except Exception as e:
             print('[!]{}'.format(e))
 

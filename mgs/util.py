@@ -74,7 +74,7 @@ def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> Tuple[DataFr
     if not (x > 0):
         return (None, None)
 
-    recentBlocks = blockData.loc[blockData['blockNumber'] > (block-x),
+    recentBlocks = blockData.loc[blockData['blockNumber'] >= (block-x),
                                  ['minGasPrice', 'blockNumber']]
 
     # create hashpower accepting dataframe based on mingasprice accepted in block

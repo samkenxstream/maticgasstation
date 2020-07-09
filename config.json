@@ -2,5 +2,5 @@
     "safelow": 35,
     "standard": 60,
     "fast": 90,
-    "rpc": "wss://ws-mumbai.matic.today/"
+    "rpc": "wss://mainnet.infura.io/ws/v3/70645f042c3a409599c60f96f6dd9fbc"
 }

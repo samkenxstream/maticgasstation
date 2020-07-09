@@ -25,7 +25,7 @@ class Transaction:
             Utility function to convert to dataframe
         '''
         return DataFrame.from_dict(
-            {self.hash: {'blockMined': self.blockMined,
+            {self.hash: {'blockMined': int(self.blockMined),
                          'gasPrice': self.gasPrice,
                          'gasPrice10GWei': self.gasPrice10GWei}},
             orient='index')
