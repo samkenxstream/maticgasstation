@@ -39,7 +39,6 @@ def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
             (mined_blockdf, block_obj) = processBlockTransactions(block, provider)
 
             if not (not mined_blockdf.empty and block_obj):
-                block -= 1
                 print('[-]Empty block : {} !'.format(block))
                 continue
 
@@ -137,12 +136,11 @@ def main() -> bool:
         return False
 
     # this line is required when talking to node which is part of network using
-    # PoA based consensus mechanism i.e. Goerli/ Ropsten
+    # PoA based consensus mechanism i.e. Goerli/ Ropsten/ Matic Mumbai Testnet/ Matic Testnet v3
     #
     # If it does cause issue, please consider commenting immediate below line
     #
-    # Note: NOT REQUIRED AS OF NOW
-    # injectPoAMiddleWare(provider)
+    injectPoAMiddleWare(provider)
 
     start = time()
     _blockNumber = provider.eth.blockNumber

@@ -21,11 +21,10 @@ def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, A
         If block is empty, returns tuple of None - needs to be handled properly
     '''
     try:
+        blockDF = DataFrame()
         blockObj = provider.eth.getBlock(blockId, True)
         if not len(blockObj.transactions):
-            return (None, None)
-
-        blockDF = DataFrame()
+            return (blockDF, None)
 
         for i in blockObj.transactions:
             tx = Transaction(i)
@@ -35,7 +34,7 @@ def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, A
 
         return(blockDF, blockObj)
     except Exception:
-        return (None, None)
+        return (blockDF, None)
 
 
 def processBlockData(blockDF: DataFrame, blockObj: AttributeDict) -> DataFrame:
