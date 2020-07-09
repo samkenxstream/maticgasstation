@@ -5,22 +5,18 @@ from typing import Dict, Any
 from json import dump
 
 
-def toJSON(gprecs: Dict[str, Any], predictionTable, sinkForGasPrice: str, sinkForPredictionTable: str) -> bool:
+def toJSON(gprecs: Dict[str, Any], sinkForGasPrice: str) -> bool:
     '''
         Exports to JSON and writes into sink
     '''
     try:
-        predictionTable['gasPrice'] /= 10
-        predictionTableOut = predictionTable.to_json(orient='records')
-
         # writing JSON formatted gas prices for
         # {safelow, standard, fast} thresholds to sink
+        if not sinkForGasPrice:
+            print('[!]Bad file name !')
+
         with open(sinkForGasPrice, 'w') as fd:
             dump(gprecs, fd, indent=4)
-
-        # writing JSON formatted prediction table output to sink
-        with open(sinkForPredictionTable, 'w') as fd:
-            fd.write(predictionTableOut)
 
         return True
     except Exception as e:

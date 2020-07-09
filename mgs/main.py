@@ -33,14 +33,14 @@ def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[Da
 
     print('[*]Loading past {} non-empty blocks ...'.format(x))
 
-    try:
-        _done = 0
-        while(_done < x):
+    _done = 0
+    while(_done < x):
+        try:
             (mined_blockdf, block_obj) = processBlockTransactions(block, provider)
 
-            if not (mined_blockdf and block_obj):
+            if not (not mined_blockdf.empty and block_obj):
                 block -= 1
-                print('[-]Empty block !')
+                print('[-]Empty block : {} !'.format(block))
                 continue
 
             print('[+]Fetched block : {}'.format(block))
@@ -50,22 +50,22 @@ def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[Da
             blockData = blockData.append(block_sumdf, ignore_index=True)
 
             _done += 1
+        except Exception:
+            pass
+        finally:
             block -= 1
 
-        return allTx, blockData
-    except Exception:
-        return None, None
+    return allTx, blockData
 
 
-def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, x: int, config: Dict[str, int], sinkForGasPrice: str, sinkForPredictionTable: str):
+def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, x: int, config: Dict[str, int], sinkForGasPrice: str):
     '''
         Adds new block data to main dataframes {allTx, blockData}, and releases 
         recommended gas prices while considering this block
     '''
     try:
-        mined_block_num = block
         (mined_blockdf, block_obj) = processBlockTransactions(
-            mined_block_num,
+            block,
             provider)
         allTx = allTx.combine_first(mined_blockdf)
 
@@ -80,11 +80,9 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
                                           block_time,
                                           block,
                                           config),
-               predictiondf,
-               sinkForGasPrice,
-               sinkForPredictionTable)
+               sinkForGasPrice)
     except Exception as e:
-        print('[!]Error: {}'.format(e))
+        print('[!]{}'.format(e))
 
 
 def _getCMDArgs() -> Tuple[str, str]:
@@ -151,12 +149,11 @@ def main() -> bool:
     # initializing by fetching last 100 blocks of data
     allTx, blockData = init(_blockNumber, config, 10, provider)
 
-    if not (allTx and blockData):
+    if allTx.empty and blockData.empty:
         print('[!]Initialization failed !')
         return False
 
-    print('Looks good, done in : {} s'.format(time() - start))
-    return True
+    print('Initialization completed in : {} s'.format(time() - start))
 
     blockTracker.currentBlockId = provider.eth.blockNumber - 1
 
@@ -170,20 +167,21 @@ def main() -> bool:
                                  allTx,
                                  blockData,
                                  provider,
-                                 200,
+                                 10,
                                  config,
-                                 sinkForGasPrice,
-                                 '')
-                blockTracker._currentBlockId = blockTracker.currentBlockId + 1
+                                 sinkForGasPrice)
 
+                print('[+]Latest recommended gas price : {}'.format(sinkForGasPrice))
+
+                blockTracker._currentBlockId = blockTracker.currentBlockId + 1
         except KeyboardInterrupt:
             print('\n[!]Terminated')
             break
         except Exception as e:
-            print('[!]Error: {}'.format(e))
+            print('[!]{}'.format(e))
 
-        # sleep for 1 second, and then go for next iteration
-        sleep(1)
+        # sleep for 3 second, and then go for next iteration
+        sleep(3)
 
     return True
 

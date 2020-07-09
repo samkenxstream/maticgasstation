@@ -33,8 +33,6 @@ def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, A
                 tx.toDataFrame(),
                 ignore_index=False)
 
-        blockObj['timestamp'] = blockObj.timestamp
-
         return(blockDF, blockObj)
     except Exception:
         return (None, None)
@@ -48,8 +46,7 @@ def processBlockData(blockDF: DataFrame, blockObj: AttributeDict) -> DataFrame:
     blockMinGasPrice = blockDF['gasPrice10GWei'].min() if len(
         blockObj.transactions) > 0 else nan
 
-    timestamp = blockDF['timestamp'].min()
-    block = Block(blockObj, timestamp, blockMinGasPrice)
+    block = Block(blockObj, blockObj.timestamp, blockMinGasPrice)
 
     return block.toDataFrame()
 
