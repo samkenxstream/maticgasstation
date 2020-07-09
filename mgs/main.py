@@ -173,9 +173,8 @@ def main() -> bool:
                                  config,
                                  sinkForGasPrice)
 
-                print(allTx.shape, blockData.shape)
                 print(
-                    '[+]Explored latest block : {}'.format(blockTracker.currentBlockId))
+                    '[+]Considered upto latest block : {}'.format(blockTracker.currentBlockId))
                 blockTracker.currentBlockId = blockTracker.currentBlockId + 1
 
         except Exception as e:
