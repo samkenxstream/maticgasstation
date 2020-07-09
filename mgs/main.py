@@ -83,8 +83,8 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
                                           block,
                                           config),
                sinkForGasPrice)
-    except Exception as e:
-        print('[!]{}'.format(e))
+    except Exception:
+        pass
 
 
 def _getCMDArgs() -> Tuple[str, str]:

@@ -55,15 +55,19 @@ def getHPA(gasprice: int, hashpower: DataFrame) -> int:
     '''
         Returns the hash power accepting the gas price over last 200 blocks
     '''
-    hpa = hashpower.loc[gasprice >= hashpower.index, 'hashp_pct']
-    if gasprice > hashpower.index.max():
-        hpa = 100
-    elif gasprice < hashpower.index.min():
-        hpa = 0
-    else:
-        hpa = hpa.max()
 
-    return int(hpa)
+    try:
+        hpa = hashpower.loc[gasprice >= hashpower.index, 'hashp_pct']
+        if gasprice > hashpower.index.max():
+            hpa = 100
+        elif gasprice < hashpower.index.min():
+            hpa = 0
+        else:
+            hpa = hpa.max()
+
+        return int(hpa)
+    except Exception:
+        return 50
 
 
 def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> Tuple[DataFrame, float]:
