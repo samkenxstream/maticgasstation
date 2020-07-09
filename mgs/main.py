@@ -5,7 +5,7 @@ from pandas import DataFrame
 from web3 import Web3
 from typing import Dict, Tuple
 from .model.transaction import Transaction
-from .model.timers import Timers
+from .model.blockTracker import BlockTracker
 from .util import (
     processBlockTransactions,
     processBlockData,
@@ -23,7 +23,7 @@ from .getConfig import (
     parseConfig,
 )
 from os.path import exists
-from time import sleep
+from time import sleep, time
 from argparse import ArgumentParser
 
 
@@ -31,27 +31,27 @@ def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[Da
     allTx = DataFrame()
     blockData = DataFrame()
 
-    print("[+]MATIC Gas Station\n")
-    print("\n[*]Safelow = {} % of blocks accepting. Usually confirms in less than 30min.".format(
-        config.get('safelow')))
-    print("\n[*]Standard = {} % of blocks accepting. Usually confirms in less than 5min.".format(
-        config.get('standard')))
-    print("\n[*]Fast = {} % of blocks accepting. Usually confirms in less than 1min.".format(
-        config.get('fast')))
-    print("\n[*]Fastest = all blocks accepting.  As fast as possible but you are probably overpaying.")
+    print('[+]Loading past {} blocks ...'.format(x))
 
-    print("\n[*]Now loading gasprice data from last {} blocks ...".format(x))
+    _done = 0
+    while(_done < x):
+        (mined_blockdf, block_obj) = processBlockTransactions(block, provider)
 
-    for pastblock in range((block - x), (block), 1):
-        (mined_blockdf, block_obj) = processBlockTransactions(pastblock, provider)
+        if not (mined_blockdf and block_obj):
+            block -= 1
+            print('Empty block !')
+            continue
 
+        print('[*]Fetched block : {}'.format(block))
         allTx = allTx.combine_first(mined_blockdf)
 
         block_sumdf = processBlockData(mined_blockdf, block_obj)
         blockData = blockData.append(block_sumdf, ignore_index=True)
 
-    print("\nPress ctrl-c at any time to stop monitoring\n")
-    print("**** And the oracle says...**** \n")
+        _done += 1
+        block -= 1
+
+    print("[+]Results ...")
 
     return allTx, blockData
 
@@ -137,24 +137,30 @@ def main() -> bool:
         return False
 
     # this line is required when talking to node which is part of network using
-    # PoA based consensus mechanism i.e. Matic/ Goerli/ Ropsten
+    # PoA based consensus mechanism i.e. Goerli/ Ropsten
     #
     # If it does cause issue, please consider commenting immediate below line
-    injectPoAMiddleWare(provider)
+    #
+    # Note: NOT REQUIRED AS OF NOW
+    # injectPoAMiddleWare(provider)
 
+    start = time()
     _blockNumber = provider.eth.blockNumber
-    timers = Timers(_blockNumber)
+    blockTracker = BlockTracker(_blockNumber)
 
     # initializing by fetching last 100 blocks of data
     allTx, blockData = init(_blockNumber, config, 100, provider)
 
+    print('Looks good, done in : {} s'.format(time() - start))
+    return True
+
     while True:
         try:
-            _blockNumber = provider.eth.blockNumber
-            if (timers.processBlock < _blockNumber):
+
+            if (blockTracker._currentBlockId <= provider.eth.blockNumber):
                 # updating data frame content, analyzing last 200 blocks,
                 # generating results, putting them into sink files
-                updateDataFrames(timers.processBlock,
+                updateDataFrames(blockTracker._currentBlockId,
                                  allTx,
                                  blockData,
                                  provider,
@@ -162,7 +168,8 @@ def main() -> bool:
                                  config,
                                  sinkForGasPrice,
                                  '')
-                timers.processBlock += 1
+                blockTracker._currentBlockId = blockTracker.currentBlockId + 1
+
         except KeyboardInterrupt:
             print('\n[!]Terminated')
             break
