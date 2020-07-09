@@ -29,7 +29,9 @@ def validateConfig(config: Dict[str, Any]) -> bool:
             _validateThreshold('standard') and\
             _validateThreshold('fast') and\
             (config['safelow'] < config['standard'] and
-             config['standard'] < config['fast']) and config['rpc']
+             config['standard'] < config['fast']) and\
+            config['rpc'] and\
+            int(config['pastBlockCount']) > 0
     except Exception:
         return False
 

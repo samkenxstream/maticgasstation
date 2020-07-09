@@ -27,7 +27,7 @@ from time import sleep, time
 from argparse import ArgumentParser
 
 
-def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
+def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
     allTx = DataFrame()
     blockData = DataFrame()
 
@@ -58,7 +58,7 @@ def init(block: int, config: Dict[str, int], x: int, provider: Web3) -> Tuple[Da
     return allTx, blockData
 
 
-def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, x: int, config: Dict[str, int], sinkForGasPrice: str):
+def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, config: Dict[str, Any], sinkForGasPrice: str):
     '''
         Adds new block data to main dataframes {allTx, blockData}, and releases 
         recommended gas prices while considering this block
@@ -74,7 +74,8 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
         blockData = blockData.append(
             block_sumdf, ignore_index=True)
 
-        (hashpower, block_time) = analyzeLastXblocks(block, blockData, x)
+        (hashpower, block_time) = analyzeLastXblocks(
+            block, blockData, int(config['pastBlockCount']))
         predictiondf = makePredictionTable(block, allTx, hashpower, block_time)
 
         toJSON(getGasPriceRecommendations(predictiondf,
@@ -148,7 +149,8 @@ def main() -> bool:
     blockTracker = BlockTracker(_blockNumber)
 
     # initializing by fetching last 100 blocks of data
-    allTx, blockData = init(_blockNumber, config, 5, provider)
+    allTx, blockData = init(_blockNumber, int(
+        config['pastBlockCount']), provider)
 
     if allTx.empty and blockData.empty:
         print('[!]Initialization failed !')
@@ -168,10 +170,9 @@ def main() -> bool:
                                  allTx,
                                  blockData,
                                  provider,
-                                 5,
                                  config,
                                  sinkForGasPrice)
-                
+
                 print(allTx.shape, blockData.shape)
                 print(
                     '[+]Explored latest block : {}'.format(blockTracker.currentBlockId))
