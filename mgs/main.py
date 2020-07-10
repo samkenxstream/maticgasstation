@@ -57,7 +57,7 @@ def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
     return allTx, blockData
 
 
-def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, config: Dict[str, Any], sinkForGasPrice: str):
+def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, config: Dict[str, Any], sinkForGasPrice: str) -> Tuple[DataFrame, DataFrame]:
     '''
         Adds new block data to main dataframes {allTx, blockData}, and releases 
         recommended gas prices while considering this block
@@ -66,6 +66,13 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
         (mined_blockdf, block_obj) = processBlockTransactions(
             block,
             provider)
+
+        # empty block could have been received, but this was not handled properly
+        # before, now it'll be taken care of
+        if not (not mined_blockdf.empty and block_obj):
+            print('[-]Empty block : {} !'.format(block))
+            raise Exception('Empty Block !')
+
         allTx = allTx.combine_first(mined_blockdf)
 
         block_sumdf = processBlockData(mined_blockdf, block_obj)
@@ -84,6 +91,8 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
                sinkForGasPrice)
     except Exception:
         pass
+    finally:
+        return (allTx, blockData)
 
 
 def _getCMDArgs() -> Tuple[str, str]:
@@ -164,19 +173,38 @@ def main() -> bool:
     while True:
         try:
 
-            if (blockTracker.currentBlockId <= provider.eth.blockNumber):
+            _blockNumber = provider.eth.blockNumber
+
+            if blockTracker.currentBlockId < _blockNumber:
                 # updating data frame content, analyzing last 200 blocks,
                 # generating results, putting them into sink files
-                updateDataFrames(blockTracker.currentBlockId,
-                                 allTx,
-                                 blockData,
-                                 provider,
-                                 config,
-                                 sinkForGasPrice)
+                #
+                # try to catch upto latest block - that's why this inner loop
+                for i in range(blockTracker.currentBlockId, _blockNumber+1):
+                    allTx, blockData = updateDataFrames(i,
+                                                        allTx,
+                                                        blockData,
+                                                        provider,
+                                                        config,
+                                                        sinkForGasPrice)
+
+                    print(
+                        '[+]Considered upto latest block : {}'.format(i))
+
+                blockTracker.currentBlockId = _blockNumber
+            elif blockTracker.currentBlockId == _blockNumber:
+                allTx, blockData = updateDataFrames(blockTracker.currentBlockId,
+                                                    allTx,
+                                                    blockData,
+                                                    provider,
+                                                    config,
+                                                    sinkForGasPrice)
 
                 print(
                     '[+]Considered upto latest block : {}'.format(blockTracker.currentBlockId))
                 blockTracker.currentBlockId = blockTracker.currentBlockId + 1
+            else:
+                pass
 
         except Exception as e:
             print('[!]{}'.format(e))
