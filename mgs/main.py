@@ -22,7 +22,7 @@ from .getWeb3 import (
 from .getConfig import (
     parseConfig,
 )
-from os.path import exists
+from os.path import exists, abspath
 from time import sleep, time
 from argparse import ArgumentParser
 
@@ -92,6 +92,8 @@ def _getCMDArgs() -> Tuple[str, str]:
         along with sink filepaths for gasprice
 
         Expecting both of them to have JSON extension
+
+        Returns absolute path of these two files
     '''
     parser = ArgumentParser()
     parser.add_argument('config_file', type=str,
@@ -109,7 +111,8 @@ def _getCMDArgs() -> Tuple[str, str]:
             args.sink_for_gas_price.endswith('.json')):
         return (None, None)
 
-    return args.config_file, args.sink_for_gas_price
+    return tuple(map(lambda e: abspath(e),
+                     [args.config_file, args.sink_for_gas_price]))
 
 
 def main() -> bool:
