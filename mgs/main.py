@@ -164,10 +164,10 @@ def main() -> bool:
     while True:
         try:
 
-            if (blockTracker._currentBlockId <= provider.eth.blockNumber):
+            if (blockTracker.currentBlockId <= provider.eth.blockNumber):
                 # updating data frame content, analyzing last 200 blocks,
                 # generating results, putting them into sink files
-                updateDataFrames(blockTracker._currentBlockId,
+                updateDataFrames(blockTracker.currentBlockId,
                                  allTx,
                                  blockData,
                                  provider,
@@ -181,8 +181,8 @@ def main() -> bool:
         except Exception as e:
             print('[!]{}'.format(e))
 
-        # sleep for 3 second, and then go for next iteration
-        sleep(3)
+        # sleep for 1 second, and then go for next iteration, for fetching new block
+        sleep(1)
 
     return True
 
