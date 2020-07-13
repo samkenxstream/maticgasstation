@@ -73,6 +73,9 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, avgBloc
         # before, now it'll be taken care of
         if not (not mined_blockdf.empty and block_obj):
             print('[-]Empty block : {} !'.format(block))
+
+            avgBlockTime.count += 1
+
             raise Exception('Empty Block !')
 
         avgBlockTime.updateTimeStampAndId(
