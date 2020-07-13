@@ -69,7 +69,7 @@ def getHPA(gasprice: int, hashpower: DataFrame) -> int:
         return 50
 
 
-def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> Tuple[DataFrame, float]:
+def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> DataFrame:
     '''
         analyses last X number of blocks, returns `hash power accepting dataframe`
         and average block interval time for last X blocks
@@ -87,19 +87,10 @@ def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> Tuple[DataFr
     totalblocks = hashpower['count'].sum()
     hashpower['hashp_pct'] = hashpower['cumBlocks']/totalblocks*100
 
-    # get avg blockinterval time
-    blockinterval = recentBlocks.sort_values('blockNumber').diff()
-    blockinterval.loc[blockinterval['blockNumber'] > 1, 'timestamp'] = nan
-    blockinterval.loc[blockinterval['timestamp'] < 0, 'timestamp'] = nan
-
-    avg_timemined = blockinterval['timestamp'].mean()
-    if isnan(avg_timemined):
-        avg_timemined = 15
-
-    return(hashpower, avg_timemined)
+    return hashpower
 
 
-def makePredictionTable(block: int, alltx: DataFrame, hashpower: DataFrame, avg_timemined: float) -> DataFrame:
+def makePredictionTable(hashpower: DataFrame) -> DataFrame:
     '''
         Generates prediction table
     '''

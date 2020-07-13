@@ -3,9 +3,10 @@
 from __future__ import annotations
 from pandas import DataFrame
 from web3 import Web3
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 from .model.transaction import Transaction
 from .model.blockTracker import BlockTracker
+from .model.avgBlockTime import AveragBlockTime
 from .util import (
     processBlockTransactions,
     processBlockData,
@@ -57,7 +58,7 @@ def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
     return allTx, blockData
 
 
-def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provider: Web3, config: Dict[str, Any], sinkForGasPrice: str) -> Tuple[DataFrame, DataFrame, bool]:
+def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, avgBlockTime: AveragBlockTime, provider: Web3, config: Dict[str, Any], sinkForGasPrice: str) -> Tuple[DataFrame, DataFrame, bool]:
     '''
         Adds new block data to main dataframes {allTx, blockData}, and releases 
         recommended gas prices while considering this block
@@ -74,6 +75,9 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
             print('[-]Empty block : {} !'.format(block))
             raise Exception('Empty Block !')
 
+        avgBlockTime.updateTimeStampAndId(
+            block_obj.timestamp, block_obj.number)
+
         allTx = allTx.combine_first(mined_blockdf)
 
         block_sumdf = processBlockData(mined_blockdf, block_obj)
@@ -81,12 +85,12 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, provide
         blockData = blockData.append(
             block_sumdf, ignore_index=True)
 
-        (hashpower, block_time) = analyzeLastXblocks(
+        hashpower = analyzeLastXblocks(
             block, blockData, int(config['pastBlockCount']))
-        predictiondf = makePredictionTable(block, allTx, hashpower, block_time)
+        predictiondf = makePredictionTable(hashpower)
 
         toJSON(getGasPriceRecommendations(predictiondf,
-                                          block_time,
+                                          avgBlockTime.avg,
                                           block,
                                           config),
                sinkForGasPrice)
@@ -170,6 +174,8 @@ def main() -> bool:
 
     print('[+]Initialization completed in : {} s\n'.format(time() - start))
 
+    avgBlockTime = AveragBlockTime(provider)
+
     blockTracker.currentBlockId = provider.eth.blockNumber
 
     while True:
@@ -186,6 +192,7 @@ def main() -> bool:
                     allTx, blockData, _success = updateDataFrames(i,
                                                                   allTx,
                                                                   blockData,
+                                                                  avgBlockTime,
                                                                   provider,
                                                                   config,
                                                                   sinkForGasPrice)
@@ -199,6 +206,7 @@ def main() -> bool:
                 allTx, blockData, _success = updateDataFrames(blockTracker.currentBlockId,
                                                               allTx,
                                                               blockData,
+                                                              avgBlockTime,
                                                               provider,
                                                               config,
                                                               sinkForGasPrice)
