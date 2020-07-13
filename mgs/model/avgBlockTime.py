@@ -21,7 +21,7 @@ class AveragBlockTime:
         self.prevBlockId = prevBlockId
         self.curBlockId = curBlockId
 
-    def updateBlockTime(self, val: float):
+    def _updateBlockTime(self, val: float):
         '''
             Calculates new average block time
         '''
@@ -29,7 +29,7 @@ class AveragBlockTime:
         self.count += 1
         self.avg = (prevTotal + val) / self.count
 
-    def validate(self, _id: int) -> bool:
+    def _validate(self, _id: int) -> bool:
         return self.curBlockId < _id
 
     def updateTimeStampAndId(self, _ts: int, _id: int):
@@ -41,7 +41,7 @@ class AveragBlockTime:
             Previously processed block can be sent in again - ignores 
             updating average block time
         '''
-        if not self.validate(_id):
+        if not self._validate(_id):
             return
 
         self.prevBlockTS = self.curBlockTS
@@ -49,7 +49,7 @@ class AveragBlockTime:
         self.curBlockTS = _ts
         self.curBlockId = _id
 
-        self.updateBlockTime(self.curBlockTS - self.prevBlockTS)
+        self._updateBlockTime(self.curBlockTS - self.prevBlockTS)
 
 
 if __name__ == '__main__':
