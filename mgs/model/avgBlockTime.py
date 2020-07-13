@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 from __future__ import annotations
+from typing import Tuple
+from web3 import Web3
 
 
 class AveragBlockTime:
@@ -13,13 +15,18 @@ class AveragBlockTime:
         updated while considering newer blocks
     '''
 
-    def __init__(self, prevBlockTS: int, curBlockTS: int, prevBlockId: int, curBlockId: int):
-        self.count = 0
-        self.avg = .0
-        self.prevBlockTS = prevBlockTS
-        self.curBlockTS = curBlockTS
-        self.prevBlockId = prevBlockId
-        self.curBlockId = curBlockId
+    def __init__(self, provider: Web3):
+        self.prevBlockTS, self.curBlockTS, self.prevBlockId, self.curBlockId = self._getBlockInfo(
+            provider)
+
+        self.count = 1
+        self.avg = self.curBlockTS - self.prevBlockTS
+
+    def _getBlockInfo(self, provider: Web3) -> Tuple[int, int, int, int]:
+        _latestBlock = provider.eth.getBlock('latest')
+        _prevBlock = provider.eth.getBlock(_latestBlock.number - 1)
+
+        return _prevBlock.timestamp,  _latestBlock.timestamp, _prevBlock.number, _latestBlock.number
 
     def _updateBlockTime(self, val: float):
         '''
