@@ -75,7 +75,7 @@ def analyzeLastXblocks(block: int, blockData: DataFrame, x: int) -> DataFrame:
         and average block interval time for last X blocks
     '''
     if not (x > 0):
-        return (None, None)
+        return None
 
     recentBlocks = blockData.loc[blockData['blockNumber'] >= (block-x),
                                  ['minGasPrice', 'blockNumber']]
@@ -94,12 +94,12 @@ def makePredictionTable(hashpower: DataFrame) -> DataFrame:
     '''
         Generates prediction table
     '''
-    pTableOne = DataFrame({'gasPrice', range(1000, 100000, 100)})
-    pTableTwo = DataFrame({'gasPrice':  range(10, 1000, 10)})
-    pTableThree = DataFrame({'gasPrice': range(0, 10, 1)})
+    _pTableOne = DataFrame({'gasPrice': range(0, 10, 1)})
+    _pTableTwo = DataFrame({'gasPrice':  range(10, 1010, 10)})
+    _tmp = _pTableOne.append(_pTableTwo).reset_index(drop=True)
+    _pTableThree = DataFrame({'gasPrice', range(1010, 10100, 100)})
 
-    predictTable = pTableOne.append(pTableTwo).reset_index(drop=True)
-    predictTable = predictTable.append(pTableThree).reset_index(drop=True)
+    predictTable = _tmp.append(_pTableThree).reset_index(drop=True)
 
     predictTable = predictTable.sort_values('gasPrice').reset_index(drop=True)
     predictTable['hashpower_accepting'] = predictTable['gasPrice'].apply(
