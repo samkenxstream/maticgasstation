@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from pandas import DataFrame
-from math import floor
+from math import ceil
 from web3.datastructures import AttributeDict
 
 
@@ -34,13 +34,17 @@ class Transaction:
         '''
             Rounds the gas price to gwei
         '''
-        gp = self.gasPrice/1e8
-        if gp >= 1 and gp < 10:
-            gp = floor(gp)
-        elif gp >= 10:
+        gp = self.gasPrice/1e7
+        if gp >= 1 and gp < 100:
+            gp = ceil(gp)
+        elif gp >= 100 and gp < 2500:
             gp = gp/10
-            gp = floor(gp)
+            gp = ceil(gp)
             gp = gp*10
+        elif gp >= 2500:
+            gp = gp/100
+            gp = ceil(gp)
+            gp = gp*100
         else:
             gp = 0
         return gp
