@@ -97,7 +97,7 @@ def makePredictionTable(hashpower: DataFrame) -> DataFrame:
     _pTableOne = DataFrame({'gasPrice': range(0, 10, 1)})
     _pTableTwo = DataFrame({'gasPrice':  range(10, 1010, 10)})
     _tmp = _pTableOne.append(_pTableTwo).reset_index(drop=True)
-    _pTableThree = DataFrame({'gasPrice', range(1010, 10100, 100)})
+    _pTableThree = DataFrame({'gasPrice': range(1010, 10100, 100)})
 
     predictTable = _tmp.append(_pTableThree).reset_index(drop=True)
 
