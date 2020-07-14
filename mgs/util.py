@@ -94,9 +94,13 @@ def makePredictionTable(hashpower: DataFrame) -> DataFrame:
     '''
         Generates prediction table
     '''
-    predictTable = DataFrame({'gasPrice':  range(10, 1010, 10)})
-    ptable2 = DataFrame({'gasPrice': range(0, 10, 1)})
-    predictTable = predictTable.append(ptable2).reset_index(drop=True)
+    pTableOne = DataFrame({'gasPrice', range(1000, 100000, 100)})
+    pTableTwo = DataFrame({'gasPrice':  range(10, 1000, 10)})
+    pTableThree = DataFrame({'gasPrice': range(0, 10, 1)})
+
+    predictTable = pTableOne.append(pTableTwo).reset_index(drop=True)
+    predictTable = predictTable.append(pTableThree).reset_index(drop=True)
+
     predictTable = predictTable.sort_values('gasPrice').reset_index(drop=True)
     predictTable['hashpower_accepting'] = predictTable['gasPrice'].apply(
         getHPA, args=(hashpower,))
@@ -133,10 +137,10 @@ def getGasPriceRecommendations(prediction_table: DataFrame, block_time: float, b
         return float(fastest)
 
     gprecs = {}
-    gprecs['safeLow'] = get_safelow()/10
-    gprecs['standard'] = get_average()/10
-    gprecs['fast'] = get_fast()/10
-    gprecs['fastest'] = get_fastest()/10
+    gprecs['safeLow'] = get_safelow()/100
+    gprecs['standard'] = get_average()/100
+    gprecs['fast'] = get_fast()/100
+    gprecs['fastest'] = get_fastest()/100
     gprecs['block_time'] = block_time
     gprecs['blockNum'] = block
 
