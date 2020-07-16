@@ -38,7 +38,8 @@ def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
     _done = 0
     while(_done < x):
         try:
-            (mined_blockdf, block_obj) = processBlockTransactions(block, provider)
+            (mined_blockdf, block_obj, _,
+             _) = processBlockTransactions(block, provider)
 
             if not (not mined_blockdf.empty and block_obj):
                 print('[-]Empty block : {} !'.format(block))
@@ -167,7 +168,7 @@ def main() -> bool:
     #
     # If it does cause issue, please consider commenting immediate below line
     #
-    injectPoAMiddleWare(provider)
+    # injectPoAMiddleWare(provider)
 
     start = time()
     _blockNumber = provider.eth.blockNumber
@@ -210,7 +211,7 @@ def main() -> bool:
                         print(
                             '[+]Considered upto latest block : {}'.format(i))
 
-                blockTracker.currentBlockId = _blockNumber
+                blockTracker.currentBlockId = _blockNumber + 1
             elif blockTracker.currentBlockId == _blockNumber:
                 allTx, blockData, _success = updateDataFrames(blockTracker.currentBlockId,
                                                               allTx,
