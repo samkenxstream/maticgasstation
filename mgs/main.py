@@ -26,6 +26,7 @@ from .getConfig import (
 from os.path import exists, abspath
 from time import sleep, time
 from argparse import ArgumentParser
+from math import isnan
 
 
 def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
@@ -37,7 +38,8 @@ def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
     _done = 0
     while(_done < x):
         try:
-            (mined_blockdf, block_obj) = processBlockTransactions(block, provider)
+            (mined_blockdf, block_obj, _,
+             _) = processBlockTransactions(block, provider)
 
             if not (not mined_blockdf.empty and block_obj):
                 print('[-]Empty block : {} !'.format(block))
@@ -65,7 +67,7 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, avgBloc
     '''
     _success = False
     try:
-        (mined_blockdf, block_obj) = processBlockTransactions(
+        (mined_blockdf, block_obj, _blockTS, _blockNumber) = processBlockTransactions(
             block,
             provider)
 
@@ -74,7 +76,12 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, avgBloc
         if not (not mined_blockdf.empty and block_obj):
             print('[-]Empty block : {} !'.format(block))
 
-            avgBlockTime.count += 1
+            if isnan(_blockTS) and isnan(_blockNumber):
+                avgBlockTime.count += 1
+            else:
+                avgBlockTime.updateTimeStampAndId(
+                    _blockTS,
+                    _blockNumber)
 
             raise Exception('Empty Block !')
 
@@ -161,7 +168,7 @@ def main() -> bool:
     #
     # If it does cause issue, please consider commenting immediate below line
     #
-    injectPoAMiddleWare(provider)
+    # injectPoAMiddleWare(provider)
 
     start = time()
     _blockNumber = provider.eth.blockNumber
@@ -204,7 +211,7 @@ def main() -> bool:
                         print(
                             '[+]Considered upto latest block : {}'.format(i))
 
-                blockTracker.currentBlockId = _blockNumber
+                blockTracker.currentBlockId = _blockNumber + 1
             elif blockTracker.currentBlockId == _blockNumber:
                 allTx, blockData, _success = updateDataFrames(blockTracker.currentBlockId,
                                                               allTx,

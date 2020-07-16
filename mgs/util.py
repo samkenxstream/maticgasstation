@@ -10,7 +10,7 @@ from .model.transaction import Transaction
 from .model.block import Block
 
 
-def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, AttributeDict]:
+def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, AttributeDict, int, int]:
     '''
         Obtains all transaction data from block,
         denoted by provided blockId and puts them into data frame,
@@ -32,9 +32,9 @@ def processBlockTransactions(blockId: int, provider: Web3) -> Tuple[DataFrame, A
                 tx.toDataFrame(),
                 ignore_index=False)
 
-        return(blockDF, blockObj)
+        return(blockDF, blockObj, blockObj.timestamp, blockObj.number)
     except Exception:
-        return (blockDF, None)
+        return (blockDF, None, nan, nan)
 
 
 def processBlockData(blockDF: DataFrame, blockObj: AttributeDict) -> DataFrame:
