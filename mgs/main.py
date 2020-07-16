@@ -26,6 +26,7 @@ from .getConfig import (
 from os.path import exists, abspath
 from time import sleep, time
 from argparse import ArgumentParser
+from math import isnan
 
 
 def init(block: int, x: int, provider: Web3) -> Tuple[DataFrame, DataFrame]:
@@ -65,7 +66,7 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, avgBloc
     '''
     _success = False
     try:
-        (mined_blockdf, block_obj) = processBlockTransactions(
+        (mined_blockdf, block_obj, _blockTS, _blockNumber) = processBlockTransactions(
             block,
             provider)
 
@@ -74,7 +75,12 @@ def updateDataFrames(block: int, allTx: DataFrame, blockData: DataFrame, avgBloc
         if not (not mined_blockdf.empty and block_obj):
             print('[-]Empty block : {} !'.format(block))
 
-            avgBlockTime.count += 1
+            if isnan(_blockTS) and isnan(_blockNumber):
+                avgBlockTime.count += 1
+            else:
+                avgBlockTime.updateTimeStampAndId(
+                    _blockTS,
+                    _blockNumber)
 
             raise Exception('Empty Block !')
 
