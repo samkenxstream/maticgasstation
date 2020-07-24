@@ -2,6 +2,7 @@
 
 const createServer = require('http').createServer;
 const exists = require('fs').exists;
+const cors = require('cors');
 
 // put absolute path to target file
 const TARGETFILE = '';
@@ -18,6 +19,9 @@ app.use((req, res, next) => {
     console.log(`${req.method} | ${req.url} | ${req.ip} | ${Date().toString()}`);
     next();
 });
+
+// enabling cors, all domains can query us
+app.use(cors());
 
 /**
  * Our simple server is going to serve on this path, attempting to access
