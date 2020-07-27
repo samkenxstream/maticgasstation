@@ -28,7 +28,9 @@ This project is inspired by [gasstation-express-oracle](https://github.com/ethga
 ### starting **MaticGasStation**
 
 - First thing first, simply clone this repo into host machine
-- Prepare a config file i.e. below, this needs to be supplied while invoking script. This config file holds information related to what percentage of blocks accepted in certain mininum gas price. An example config file is supplied in this repo.
+- Prepare a config file like below, this needs to be supplied while invoking script. This config file holds information related to what percentage of blocks accepted in certain mininum gas price, rpc endpoint to be used for fetching data, #-of past blocks to be considered. ~~An example config file is supplied in this repo.~~
+
+**Note: RPC endpoint needs to be adapted as per requirement. Consider using WebSocket endpoint if possible, other wise HTTP will also work fine.**
 
 ```json
 {
