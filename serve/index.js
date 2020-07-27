@@ -3,13 +3,17 @@
 const createServer = require('http').createServer;
 const exists = require('fs').exists;
 const cors = require('cors');
-
-// put absolute path to target file
-const TARGETFILE = '';
-const PORT = 8000;
-const HOST = '0.0.0.0';
+const dotnet = require('dotenv');
+const path = require('path');
 
 const app = require('express')();
+
+// reading from .env config file, present in this directory
+dotnet.config({ path: path.join(__dirname, 'config.env'), silent: true })
+
+const host = process.env.HOST || '127.0.0.1';
+const port = process.env.PORT || 8000;
+const targetFile = path.join(__dirname, process.env.TARGET_FILE || 'output.json');
 
 /**
  * Simple traffic logger, may be useful in future, can be retrieved using
@@ -28,14 +32,16 @@ app.use(cors());
  * any other, simply returns 404
  * 
  * Response will be of JSON type.
+ * 
+ * Note: targetFile is absolute path to gas price data, to be served.
  */
 app.get('/', (req, res) => {
 
-    exists(TARGETFILE, (v) => {
+    exists(targetFile, (v) => {
 
         if (v) {
 
-            res.status(200).type('application/json').sendFile(TARGETFILE, (err) => {
+            res.status(200).type('application/json').sendFile(targetFile, (err) => {
                 if (err)
                     res.status(404).end();
             });
@@ -59,6 +65,6 @@ app.get('*', (req, res) => {
 
 });
 
-createServer(app).listen(PORT, HOST, () => {
-    console.log(`[+]HTTP Server running on http://${HOST}:${PORT}`);
+createServer(app).listen(port, host, () => {
+    console.log(`[+]HTTP Server running on http://${host}:${port}`);
 });
