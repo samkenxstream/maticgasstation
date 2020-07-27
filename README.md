@@ -25,6 +25,8 @@ This project is inspired by [gasstation-express-oracle](https://github.com/ethga
 
 ## deployment
 
+### starting **MaticGasStation**
+
 - First thing first, simply clone this repo into host machine
 - Prepare a config file i.e. below, this needs to be supplied while invoking script. This config file holds information related to what percentage of blocks accepted in certain mininum gas price. An example config file is supplied in this repo.
 
@@ -64,6 +66,8 @@ $ flit install -s
 $ maticGS config.json ~/sinkForGasPrice.json
 ```
 
+### starting **Express App**
+
 - Time to run nodejs script that will serve recommended gas prices to mass, get into `serve` directory and install dependencies
 
 ```bash
@@ -71,9 +75,25 @@ $ cd serve
 $ npm install # make sure you've node and npm installed
 ```
 
-- Open `./index.js` with your favourite text-editor and set `TARGETFILE` as file to be served _[ please put absolute path of file, otherwise it'll misbehave ]_
-- Set desired `HOST` and `PORT`
-- Now run `./index.js` _[ it's a very simple express application ]_
+- Create a `config.env` file, for holding environment variables.
+
+```bash
+$ touch config.env
+```
+
+- Open `config.env` with your favourite text editor & add these fields.
+
+```text
+HOST=0.0.0.0
+PORT=8000
+TARGET_FILE=../output.json
+```
+
+- HOST : host machine ip, if not supplied, set to '127.0.0.1'
+- PORT : port on which this application can be queried, by default set to 8000
+- TARGET_FILE : path to sink file, where maticgasstation is putting its 
+result, set in previous step. _[Don't put absolute path to sink file, relative path is fine, conversion to absolute path to be done by script, at runtime ]_
+- Now start express application
 
 ```bash
 $ node index.js # voila !!!
