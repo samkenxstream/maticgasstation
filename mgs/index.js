@@ -68,8 +68,19 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
 }
 
 
+const sleep = async (ms) => new Promise(resolve => { setTimeout(resolve, ms) })
+
+const run = async (_web3, _transactions, _rec) => {
+    while (true) {
+        await fetchBlockAndProcess(_web3, _transactions, _rec)
+        await sleep(1000)
+    }
+}
+
+
 const web3 = getWeb3()
-const recommendation = new Recommendation()
 const transactions = new Transactions(BUFFERSIZE)
+const recommendation = new Recommendation()
 
 setInterval(updateBlockTime, 60000, web3, recommendation)
+run(web3, transactions, recommendation).then(_ => { }, err => { console.log(err) })
