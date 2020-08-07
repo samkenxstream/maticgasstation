@@ -2,73 +2,54 @@
 
 ## intro
 
-_**maticgasstation** - Friend of a Matic developer_
-
-_Tool for getting gas price recommendations before sending transactions off to matic network_
+**maticgasstation** - _Gas Price Recommender for Matic Network ( can be used on any EVM based network with JSON RPC interface )_
 
 ## origin
 
-This project is inspired by [gasstation-express-oracle](https://github.com/ethgasstation/gasstation-express-oracle). Updated to work with Matic Network.
-
-## progress
-
-~~**This is active WIP**~~
-
-**This will be maintained and improved overtime** :heavy_check_mark:
-
-- Started adapting for matic network [03/07/2020]
-- Completed writing, now works for Matic network [06/07/2020]
-- More features to be added in near future
-
-    - Multi-thearding support for faster performance _[ not implemented now due to race condition in threads, to be resolved ]_
-    - Adding IPC based communication with node
+This project is inspired by [gasstation-express-oracle](https://github.com/ethgasstation/gasstation-express-oracle). Updated to work with Matic Network. 
 
 ## deployment
 
-### starting **MaticGasStation**
+### init
 
-- First thing first, simply clone this repo into host machine
-- Prepare a config file like below, this needs to be supplied while invoking script. This config file holds information related to what percentage of blocks accepted in certain mininum gas price, rpc endpoint to be used for fetching data, #-of past blocks to be considered. ~~An example config file is supplied in this repo.~~
-
-**Note: RPC endpoint needs to be adapted as per requirement. Consider using WebSocket endpoint if possible, other wise HTTP will also work fine.**
-
-```json
-{
-    "safelow": 35,
-    "standard": 60,
-    "fast": 90,
-    "rpc": "wss://testnetv3-wss.matic.network",
-    "pastBlockCount": 200
-}
-```
-
-- **Make sure you've Python( >= 3.7.0 )**
-- Now install all dependencies by running
+- Make sure you've `npm (>=6.14.6)` & `node (>12.18.3)` installed
+- Clone this repo in your machine
+- Prepare a `.env` file & put it inside `/mgs` directory inside root of this project.
 
 ```bash
-$ python3 -m pip install -r requirements.txt
+$ cd mgs && echo "SAFELOW=30
+STANDARD=60
+FAST=90
+RPC=wss://ws-mumbai.matic.today
+BUFFERSIZE=500
+SINK=../sink.json" > .env
 ```
-- Install `flit` - easy to use for building PyPI packages and also for local use.
+
+The gas price at which _>= 30 %_ of all transactions get accepted, called **SAFELOW**
+
+The gas price at which _>= 60 %_ of all transactions get accepted, called **STANDARD**
+
+The gas price at which _>= 90 %_ of all transactions get accepted, called **FAST**
+
+The gas price at which all transactions get accepted, called **FASTEST** _( no need to specify it in .env file )_
+
+Please use websocket endpoint for connecting to blockchain node. Transaction pool size is kept 500 i.e. 500 most recent transactions to be kept in pool, for recommending gas prices. SINK is where we're going publish recommendation, which will be served over HTTP GET request.
+
+- Install all dependencies
 
 ```bash
-$ python3 -m pip install -U flit
+$ npm install
 ```
 
-- `flit init` has already been done, which is why `pyproject.toml` is generated.
-- Now run, before that make sure you've added `$HOME/.local/bin` to `$PATH`.
+- Now start gas station
 
 ```bash
-$ flit install -s
+$ node index.js
 ```
 
-- Now `maticGS` will be available on your `$PATH`.
-- Run using 
+**Note: Consider deploying it using systemd**
 
-```bash
-$ maticGS config.json ~/sinkForGasPrice.json
-```
-
-### starting **Express App**
+### serve
 
 - Time to run nodejs script that will serve recommended gas prices to mass, get into `serve` directory and install dependencies
 
@@ -111,15 +92,15 @@ $ node index.js # voila !!!
 
 ```json
 {
-    "safeLow": 20.0,
-    "standard": 30.0,
-    "fast": 33.0,
-    "fastest": 45.0,
-    "block_time": 15,
-    "blockNum": 10429611
+    "safeLow": 5,
+    "standard": 5,
+    "fast": 10,
+    "fastest": 10,
+    "blockTime": 2,
+    "blockNumber": 2650006
 }
 ```
 
 - _{'safelow', 'standard', 'fast', 'fastest'}_ are gas prices in gwei
 - _blockNumber_ indicates latest block when recommendation was made
-- _block\_time_ in second
+- _blockTime_ in second
