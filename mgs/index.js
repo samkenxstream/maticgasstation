@@ -28,14 +28,11 @@ const updateBlockTime = (_web3, _rec) => {
 
 const processTransaction = async (_web3, _hash, _transactions) => {
     let _transaction = await _web3.eth.getTransaction(_hash)
-    _transactions.add(new Transaction(_block.number, parseInt(_transaction.gasPrice, 10) / 1e9))
+    _transactions.add(new Transaction(_transaction.blockNumber, parseInt(_transaction.gasPrice, 10) / 1e9))
 }
 
 const processBlock = async (_web3, _transactions, _block) => {
-    if (_block.transactions.length == 0) {
-        return
-    }
-
+    console.log(`[+]Processing Block : ${_block.number}`)
     for (let i = 0; i < _block.transactions.length; i++) {
         await processTransaction(_web3, _block.transactions[i], _transactions)
     }
@@ -43,15 +40,19 @@ const processBlock = async (_web3, _transactions, _block) => {
 
 const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
     let latestBlock = await _web3.eth.getBlock('latest')
+    if (latestBlock.transactions.length == 0) {
+        console.log(`[!]Empty Block : ${latestBlock.number}`)
+        return
+    }
 
     if (_transactions.all.length == 0) {
-        await processBlock(_web3, latestBlock, _rec)
+        await processBlock(_web3, _transactions, latestBlock)
     } else {
         if (_transactions.latestBlockNumber >= latestBlock.number) {
             return
         }
 
-        await processBlock(_web3, latestBlock, _rec)
+        await processBlock(_web3, _transactions, latestBlock)
     }
 
     const cumsumGasPrices = _transactions.cumulativePercentageOfGasPrices()
@@ -64,7 +65,8 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
     )
     _rec.blockNumber = _transactions.latestBlockNumber
 
-    _rec.write(SINK)
+    let msg = await _rec.write(SINK)
+    console.log(msg)
 }
 
 
@@ -82,5 +84,6 @@ const web3 = getWeb3()
 const transactions = new Transactions(BUFFERSIZE)
 const recommendation = new Recommendation()
 
+console.log('[+]Matic Gas Station running ...')
 setInterval(updateBlockTime, 60000, web3, recommendation)
 run(web3, transactions, recommendation).then(_ => { }, err => { console.log(err) })
