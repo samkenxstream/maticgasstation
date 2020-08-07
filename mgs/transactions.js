@@ -1,7 +1,6 @@
 module.exports = class Transactions {
 
     all = []
-    size = 1
 
     constructor(size) {
         this.size = size
@@ -46,7 +45,7 @@ module.exports = class Transactions {
     }
 
     getMinGasPriceWithAcceptanceRateX(gasPrices, x) {
-        return Math.min(...gasPrices.filter(v => v[1] >= x).map(v => v[1]));
+        return Math.min(...gasPrices.filter(v => v[1] >= x).map(v => v[0]));
     }
 
 }
