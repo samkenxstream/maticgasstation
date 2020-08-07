@@ -1,3 +1,6 @@
+const path = require('path');
+const { writeFile } = require('fs');
+
 module.exports = class Recommendation {
     safeLow = NaN
     standard = NaN
@@ -23,5 +26,17 @@ module.exports = class Recommendation {
             blockNumber: this.blockNumber
         }
     }
+
+    write(sink) {
+        return new Promise((resolve, reject) => {
+            writeFile(path.join(__dirname, sink), JSON.stringify(this.toJSON()), err => {
+                if (err) {
+                    reject('Failed to write !')
+                }
+                resolve('Wrote !')
+            })
+        })
+    }
+
 
 }

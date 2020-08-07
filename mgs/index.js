@@ -12,11 +12,9 @@ const STANDARD = process.env.STANDARD || 60
 const FAST = process.env.FAST || 90
 const RPC = process.env.RPC || 'wss://ws-mumbai.matic.today'
 const BUFFERSIZE = process.env.BUFFERSIZE || 500
-const SINK = process.env.SINK || 'sink.json'
+const SINK = process.env.SINK || '../sink.json'
 
-const getWeb3 = () => {
-    return new Web3(new Web3.providers.WebsocketProvider(RPC))
-}
+const getWeb3 = () => new Web3(new Web3.providers.WebsocketProvider(RPC))
 
 const getBlockTime = async _web3 => {
     let latestBlock = await _web3.eth.getBlock('latest')
@@ -65,6 +63,8 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
         _transactions.getMinGasPriceWithAcceptanceRateX(cumsumGasPrices, 100)
     )
     _rec.blockNumber = _transactions.latestBlockNumber
+
+    _rec.write(SINK)
 }
 
 
