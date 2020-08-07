@@ -15,4 +15,8 @@ module.exports = class Transactions {
         this.all.push(transaction)
     }
 
+    extractGasPrices() {
+        return this.all.map(v => v.gasPrice)
+    }
+
 }

@@ -1,6 +1,8 @@
 module.exports = class Transaction {
 
-    blockNumber = NaN
-    gasPrice = NaN
+    constructor(blockNumber, gasPrice) {
+        this.blockNumber = blockNumber
+        this.gasPrice = gasPrice
+    }
 
 }
