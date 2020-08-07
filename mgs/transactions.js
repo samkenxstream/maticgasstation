@@ -45,4 +45,8 @@ module.exports = class Transactions {
         return buffer.map(v => [v[0], (v[1] / max) * 100]);
     }
 
+    getMinGasPriceWithAcceptanceRateX(gasPrices, x) {
+        return Math.min(...gasPrices.filter(v => v[1] >= x).map(v => v[1]));
+    }
+
 }
