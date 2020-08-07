@@ -1,0 +1,19 @@
+{
+  "name": "mgs",
+  "version": "1.0.0",
+  "description": "Matic Gas Station - gas price recommender to developers ;)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maticnetwork/maticgasstation.git"
+  },
+  "author": "Anjan Roy <anjan.roy@matic.network>",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@maticnetwork/dagger": "^0.1.0",
+    "dotenv": "^8.2.0"
+  }
+}
