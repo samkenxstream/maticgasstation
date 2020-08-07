@@ -6,15 +6,6 @@ module.exports = class Recommendation {
     blockTime = NaN
     blockNumber = NaN
 
-    constructor(safeLow, standard, fast, fastest, blockTime, blockNumber) {
-        this.safeLow = safeLow
-        this.standard = standard
-        this.fast = fast
-        this.fastest = fastest
-        this.blockTime = blockTime
-        this.blockNumber = blockNumber
-    }
-
     updateGasPrices(safeLow, standard, fast, fastest) {
         this.safeLow = safeLow
         this.standard = standard
