@@ -1,5 +1,4 @@
-config.json
-mgs/__pycache__
-mgs/model/__pycache__
-serve/node_modules
+mgs/config.env
+mgs/node_modules
 serve/config.env
+serve/node_modules
