@@ -38,4 +38,11 @@ module.exports = class Transactions {
         return buffer
     }
 
+    cumulativePercentageOfGasPrices() {
+        let buffer = this.cumulativeSumOfGasPrices();
+        let max = buffer[buffer.length - 1][1];
+
+        return buffer.map(v => [v[0], (v[1] / max) * 100]);
+    }
+
 }
