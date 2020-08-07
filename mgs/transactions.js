@@ -15,17 +15,17 @@ module.exports = class Transactions {
         this.all.push(transaction)
     }
 
-    #extractGasPrices() {
+    extractGasPrices() {
         return this.all.map(v => v.gasPrice)
     }
 
-    #ascendingGasPrices() {
-        this.#extractGasPrices.sort(a, b => a - b)
+    ascendingGasPrices() {
+        return this.extractGasPrices().sort((a, b) => a - b)
     }
 
     cumulativeSumOfGasPrices() {
         let buffer = [];
-        let prices = this.#ascendingGasPrices()
+        let prices = this.ascendingGasPrices()
         let upto = 0
 
         for (let i = 0; i < prices.length; i++) {
