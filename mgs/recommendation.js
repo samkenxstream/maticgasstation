@@ -1,6 +1,8 @@
 const path = require('path');
 const { writeFile } = require('fs');
 
+// class for storing, publishing gas price recommendations
+// along with blocktime & block number when recommendation was made
 module.exports = class Recommendation {
     safeLow = NaN
     standard = NaN
@@ -9,6 +11,7 @@ module.exports = class Recommendation {
     blockTime = NaN
     blockNumber = NaN
 
+    // updates gas price recommendation with latest values
     updateGasPrices(safeLow, standard, fast, fastest) {
         this.safeLow = safeLow
         this.standard = standard
@@ -16,6 +19,8 @@ module.exports = class Recommendation {
         this.fastest = fastest
     }
 
+    // jsonify this class content, which is to be written
+    // into sink file, to be served by node server
     toJSON() {
         return JSON.stringify(
             {
@@ -29,6 +34,8 @@ module.exports = class Recommendation {
         )
     }
 
+    // write json response to given file path, where `sink` is
+    // relative path to file
     write(sink) {
         return new Promise((resolve, reject) => {
             writeFile(path.join(__dirname, sink), this.toJSON(), err => {
