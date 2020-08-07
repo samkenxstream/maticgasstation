@@ -15,8 +15,12 @@ module.exports = class Transactions {
         this.all.push(transaction)
     }
 
-    extractGasPrices() {
+    #extractGasPrices() {
         return this.all.map(v => v.gasPrice)
+    }
+
+    ascendingGasPrices() {
+        this.#extractGasPrices.sort(a, b => a - b);
     }
 
 }
