@@ -19,8 +19,23 @@ module.exports = class Transactions {
         return this.all.map(v => v.gasPrice)
     }
 
-    ascendingGasPrices() {
-        this.#extractGasPrices.sort(a, b => a - b);
+    #ascendingGasPrices() {
+        this.#extractGasPrices.sort(a, b => a - b)
+    }
+
+    cumulativeSumOfGasPrices() {
+        let buffer = [];
+        let prices = this.#ascendingGasPrices()
+        let upto = 0
+
+        for (let i = 0; i < prices.length; i++) {
+
+            buffer.push([prices[i], upto + prices[i]])
+            upto += prices[i]
+
+        }
+
+        return buffer
     }
 
 }
