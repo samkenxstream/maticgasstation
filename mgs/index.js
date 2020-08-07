@@ -1,7 +1,9 @@
 const dotnet = require('dotenv')
 const path = require('path')
 const Web3 = require('web3')
-const Recommendation = require('./recommendation');
+const Recommendation = require('./recommendation')
+const Transaction = require('./transaction')
+const Transactions = require('./transactions')
 
 dotnet.config({ path: path.join(__dirname, '.env'), silent: true })
 
@@ -23,6 +25,10 @@ const getBlockTime = async _web3 => {
 
 const updateBlockTime = (_rec, _web3) => {
     _rec.blockTime = getBlockTime(_web3)
+}
+
+const fetchBlockAndProcess = async _web3 => {
+    let latestBlock = _web3.eth.getBlock('latest');
 }
 
 

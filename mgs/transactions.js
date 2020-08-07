@@ -38,14 +38,18 @@ module.exports = class Transactions {
     }
 
     cumulativePercentageOfGasPrices() {
-        let buffer = this.cumulativeSumOfGasPrices();
-        let max = buffer[buffer.length - 1][1];
+        let buffer = this.cumulativeSumOfGasPrices()
+        let max = buffer[buffer.length - 1][1]
 
-        return buffer.map(v => [v[0], (v[1] / max) * 100]);
+        return buffer.map(v => [v[0], (v[1] / max) * 100])
     }
 
     getMinGasPriceWithAcceptanceRateX(gasPrices, x) {
-        return Math.min(...gasPrices.filter(v => v[1] >= x).map(v => v[0]));
+        return Math.min(...gasPrices.filter(v => v[1] >= x).map(v => v[0]))
+    }
+
+    get latestBlockNumber() {
+        return Math.max(...this.all.map(v => v.blockNumber))
     }
 
 }
