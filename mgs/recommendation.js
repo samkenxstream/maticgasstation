@@ -17,19 +17,21 @@ module.exports = class Recommendation {
     }
 
     toJSON() {
-        return {
-            safeLow: this.safeLow,
-            standard: this.standard,
-            fast: this.fast,
-            fastest: this.fastest,
-            blockTime: this.blockTime,
-            blockNumber: this.blockNumber
-        }
+        return JSON.stringify(
+            {
+                safeLow: this.safeLow,
+                standard: this.standard,
+                fast: this.fast,
+                fastest: this.fastest,
+                blockTime: this.blockTime,
+                blockNumber: this.blockNumber
+            }, null, '\t'
+        )
     }
 
     write(sink) {
         return new Promise((resolve, reject) => {
-            writeFile(path.join(__dirname, sink), JSON.stringify(this.toJSON()), err => {
+            writeFile(path.join(__dirname, sink), this.toJSON(), err => {
                 if (err) {
                     reject('[!]Failed to write recommendation')
                 }
