@@ -23,7 +23,9 @@ const getBlockTime = async _web3 => {
 }
 
 const updateBlockTime = (_web3, _rec) => {
-    _rec.blockTime = getBlockTime(_web3)
+    getBlockTime(_web3).then(v => {
+        _rec.blockTime = v
+    })
 }
 
 const processTransaction = async (_web3, _hash, _transactions) => {

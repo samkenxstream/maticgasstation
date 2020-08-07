@@ -31,9 +31,9 @@ module.exports = class Recommendation {
         return new Promise((resolve, reject) => {
             writeFile(path.join(__dirname, sink), JSON.stringify(this.toJSON()), err => {
                 if (err) {
-                    reject('Failed to write !')
+                    reject('[!]Failed to write recommendation')
                 }
-                resolve('Wrote !')
+                resolve('[+]Wrote new recommendation')
             })
         })
     }
