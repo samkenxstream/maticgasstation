@@ -42,9 +42,14 @@ const processBlock = async (_web3, _transactions, _block) => {
 
 const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
     let latestBlock = await _web3.eth.getBlock('latest')
+
     if (latestBlock.transactions.length == 0) {
-        console.log(`[!]Empty Block : ${latestBlock.number}`)
+
+        console.log(_transactions.latestBlockNumber < latestBlock.number ?
+            `[!]Empty Block : ${latestBlock.number}` :
+            `[!]Already visited: ${latestBlock.number}`)
         return
+
     }
 
     if (_transactions.all.length == 0) {
@@ -69,6 +74,8 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
 
     let msg = await _rec.write(SINK)
     console.log(msg)
+
+    console.log(_transactions.all)
 }
 
 
