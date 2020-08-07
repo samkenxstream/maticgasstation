@@ -37,7 +37,7 @@ This project is inspired by [gasstation-express-oracle](https://github.com/ethga
     "safelow": 35,
     "standard": 60,
     "fast": 90,
-    "rpc": "wss://testnetv3-wss.matic.network",
+    "rpc": "wss://ws-mumbai.matic.today",
     "pastBlockCount": 200
 }
 ```
@@ -115,7 +115,7 @@ $ node index.js # voila !!!
     "standard": 30.0,
     "fast": 33.0,
     "fastest": 45.0,
-    "block_time": 15,
+    "block_time": 2,
     "blockNum": 10429611
 }
 ```
