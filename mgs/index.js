@@ -1,6 +1,7 @@
 const dotnet = require('dotenv')
 const path = require('path')
 const Web3 = require('web3')
+const humanizeDuration = require('humanize-duration')
 const Recommendation = require('./recommendation')
 const Transaction = require('./transaction')
 const Transactions = require('./transactions')
@@ -18,7 +19,7 @@ const BUFFERSIZE = process.env.BUFFERSIZE || 500
 const SINK = process.env.SINK || '../sink.json'
 
 // obtaining connection to websocket RPC endpoint
-const getWeb3 = () => new Web3(new Web3.providers.WebsocketProvider(RPC))
+const getWeb3 = () => new Web3(RPC.startsWith('http') ? new Web3.providers.HttpProvider(RPC) : new Web3.providers.WebsocketProvider(RPC))
 
 // fetch latest block & block previous to latest one,
 // for computing blocktime i.e. block mining delay
@@ -39,19 +40,42 @@ const updateBlockTime = (_web3, _rec) => {
 // given hash of transaction i.e. unique identifier, it will
 // fetch that transaction and put it inside transaction pool, 
 // for further processing purposes
-const processTransaction = async (_web3, _hash, _transactions) => {
-    let _transaction = await _web3.eth.getTransaction(_hash)
-    _transactions.add(new Transaction(_transaction.blockNumber,
-        parseInt(_transaction.gasPrice, 10) / 1e9))
+const processTransaction = async (_web3, _hash, _blockNumber, _transactions) => {
+
+    const start = new Date().getTime()
+    const _transaction = await _web3.eth.getTransaction(_hash)
+
+    if (_transaction !== 'null') {
+
+        _transactions.add(new Transaction(
+            _transaction.blockNumber,
+            parseInt(_transaction.gasPrice, 10) / 1e9))
+
+        console.log(`➕ Processed tx of block : ${_blockNumber} in ${humanizeDuration(new Date().getTime() - start)}`)
+
+    }
+
 }
 
 // given a non-empty ( having atleast 1 transaction ) block object, it'll
 // go through each of them & put them inside transaction pool
 const processBlock = async (_web3, _transactions, _block) => {
-    console.log(`[+]Processing Block : ${_block.number}`)
+
+    console.log(`🔅 Processing Block : ${_block.number}`)
+
+    const start = new Date().getTime()
+    const promises = []
+
     for (let i = 0; i < _block.transactions.length; i++) {
-        await processTransaction(_web3, _block.transactions[i], _transactions)
+
+        promises.push(processTransaction(_web3, _block.transactions[i], _block.number, _transactions))
+
     }
+
+    await Promise.all(promises)
+
+    console.log(`✅ Block : ${_block.number} in ${humanizeDuration(new Date().getTime() - start)}`)
+
 }
 
 // fetch latest block mined, if it's not already processed & non-empty
@@ -62,16 +86,11 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
     let latestBlock = await _web3.eth.getBlock('latest')
 
     if (latestBlock.transactions.length == 0) {
-        console.log(`[!]Empty Block : ${latestBlock.number}`)
+        console.log(`❗️ Empty Block : ${latestBlock.number}`)
         return
     }
 
-    if (_transactions.all.length == 0) {
-        await processBlock(_web3, _transactions, latestBlock)
-    } else {
-        if (_transactions.latestBlockNumber >= latestBlock.number)
-            return
-
+    if (_transactions.all.length == 0 || _transactions.latestBlockNumber < latestBlock.number) {
         await processBlock(_web3, _transactions, latestBlock)
     }
 
@@ -90,7 +109,7 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
 }
 
 // sleep for `ms` miliseconds, just do nothing
-const sleep = async (ms) => new Promise(resolve => { setTimeout(resolve, ms) })
+const sleep = async (ms) => new Promise((res, _) => { setTimeout(res, ms) })
 
 // infinite loop, for keep fetching latest block data, for computing
 // gas price recommendation using past data available
@@ -108,4 +127,4 @@ const recommendation = new Recommendation()
 
 console.log('[+]Matic Gas Station running ...')
 setInterval(updateBlockTime, 60000, web3, recommendation)
-run(web3, transactions, recommendation).then(_ => { }, err => { console.log(err) })
+run(web3, transactions, recommendation).then(_ => { }).catch(e => { console.error(e); process.exit(1) })
