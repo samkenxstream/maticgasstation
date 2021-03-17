@@ -90,10 +90,11 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
         return
     }
 
-    if (_transactions.all.length == 0 || _transactions.latestBlockNumber < latestBlock.number) {
-        await processBlock(_web3, _transactions, latestBlock)
+    if (!(_transactions.latestBlockNumber < latestBlock.number)) {
+        return
     }
 
+    await processBlock(_web3, _transactions, latestBlock)
     const cumsumGasPrices = _transactions.cumulativePercentageOfGasPrices()
 
     _rec.updateGasPrices(

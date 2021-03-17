@@ -60,7 +60,7 @@ module.exports = class Transactions {
     // compute latest block number, upto which processing has been done
     // this will be helpful to avoid re-consideration of same block again & again
     get latestBlockNumber() {
-        return Math.max(...this.all.map(v => v.blockNumber))
+        return this.all.length == 0 ? 0 : Math.max(...this.all.map(v => v.blockNumber))
     }
 
 }

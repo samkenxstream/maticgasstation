@@ -30,7 +30,7 @@ module.exports = class Recommendation {
                 fastest: this.fastest,
                 blockTime: this.blockTime,
                 blockNumber: this.blockNumber
-            }, null, '\t'
+            }
         )
     }
 
@@ -42,7 +42,7 @@ module.exports = class Recommendation {
                 if (err) {
                     reject('❌ Failed to write recommendation')
                 }
-                
+
                 resolve('🎉 Wrote new recommendation')
             })
         })
