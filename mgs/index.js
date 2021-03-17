@@ -40,7 +40,7 @@ const updateBlockTime = (_web3, _rec) => {
 // given hash of transaction i.e. unique identifier, it will
 // fetch that transaction and put it inside transaction pool, 
 // for further processing purposes
-const processTransaction = async (_web3, _hash, _blockNumber, _transactions) => {
+const processTransaction = async (_web3, _hash, _blockNumber, idx, _transactions) => {
 
     const start = new Date().getTime()
     const _transaction = await _web3.eth.getTransaction(_hash)
@@ -51,7 +51,7 @@ const processTransaction = async (_web3, _hash, _blockNumber, _transactions) => 
             _transaction.blockNumber,
             parseInt(_transaction.gasPrice, 10) / 1e9))
 
-        console.log(`➕ Processed tx of block : ${_blockNumber} in ${humanizeDuration(new Date().getTime() - start)}`)
+        console.log(`➕ Processed tx ${idx} of block : ${_blockNumber} in ${humanizeDuration(new Date().getTime() - start)}`)
 
     }
 
@@ -68,7 +68,7 @@ const processBlock = async (_web3, _transactions, _block) => {
 
     for (let i = 0; i < _block.transactions.length; i++) {
 
-        promises.push(processTransaction(_web3, _block.transactions[i], _block.number, _transactions))
+        promises.push(processTransaction(_web3, _block.transactions[i], _block.number, i, _transactions))
 
     }
 
@@ -125,6 +125,7 @@ const web3 = getWeb3()
 const transactions = new Transactions(BUFFERSIZE)
 const recommendation = new Recommendation()
 
-console.log('[+]Matic Gas Station running ...')
+console.log('🔥 Matic Gas Station running ...')
+
 setInterval(updateBlockTime, 60000, web3, recommendation)
 run(web3, transactions, recommendation).then(_ => { }).catch(e => { console.error(e); process.exit(1) })
