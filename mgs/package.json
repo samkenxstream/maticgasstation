@@ -4,6 +4,7 @@
   "description": "Matic Gas Station - gas price recommender to developers ;)",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -14,6 +15,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "dotenv": "^8.2.0",
+    "humanize-duration": "^3.25.1",
     "web3": "^1.2.11"
   }
 }

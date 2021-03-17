@@ -30,7 +30,7 @@ module.exports = class Recommendation {
                 fastest: this.fastest,
                 blockTime: this.blockTime,
                 blockNumber: this.blockNumber
-            }, null, '\t'
+            }
         )
     }
 
@@ -40,9 +40,10 @@ module.exports = class Recommendation {
         return new Promise((resolve, reject) => {
             writeFile(path.join(__dirname, sink), this.toJSON(), err => {
                 if (err) {
-                    reject('[!]Failed to write recommendation')
+                    reject('❌ Failed to write recommendation')
                 }
-                resolve('[+]Wrote new recommendation')
+
+                resolve('🎉 Wrote new recommendation')
             })
         })
     }
