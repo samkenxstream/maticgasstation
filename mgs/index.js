@@ -45,7 +45,7 @@ const processTransaction = async (_web3, _hash, _blockNumber, _transactions) => 
     const start = new Date().getTime()
     const _transaction = await _web3.eth.getTransaction(_hash)
 
-    if (_transaction !== 'null') {
+    if (_transaction !== null) {
 
         _transactions.add(new Transaction(
             _transaction.blockNumber,
