@@ -1,7 +1,11 @@
+const { config } = require('dotenv')
+const path = require('path')
 const { createServer } = require('http')
 const cors = require('cors')
 const app = require('express')()
 const morgan = require('morgan')
+
+config({ path: path.join(__dirname, '.env'), silent: true })
 
 const host = process.env.HOST || '0.0.0.0'
 const port = process.env.PORT || 7000

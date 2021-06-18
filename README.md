@@ -99,6 +99,8 @@ docker rm matic_gas_station
 docker rmi -f matic_gas_station
 ```
 
+> Note: Log rotation is enabled, max log file size 8MB, max log file count 4. For changing this see `Makefile`.
+
 ## Usage
 
 Send HTTP GET request
