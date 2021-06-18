@@ -21,13 +21,14 @@ FAST=90
 FASTEST=100
 RPC=wss://<domain>
 BUFFERSIZE=500
-HOST=127.0.0.1
+HOST=0.0.0.0
 PORT=7000
 ```
 
 - Install dependencies
 
 ```bash
+popd
 make install
 ```
 
@@ -35,6 +36,67 @@ make install
 
 ```bash
 make run
+```
+
+---
+
+### Dockerised Setup
+
+Assuming you've docker daemon up & running,
+
+- Build docker image
+
+```bash
+# all commands executed at root of project
+
+make build_docker
+```
+
+- Create `.env` file at root of project
+- Run docker container
+
+```bash
+# exposes port 7000 on HOST, 
+# while expecting PORT field
+# was untouched in .env
+
+make run_docker
+```
+
+- Check docker container running
+
+```bash
+docker ps
+```
+
+- Check log
+
+```bash
+docker logs matic_gas_station -f # while following
+```
+
+- Stop container
+
+```bash
+docker stop matic_gas_station
+```
+
+- Restart container
+
+```bash
+docker restart matic_gas_station
+```
+
+- Remove container
+
+```bash
+docker rm matic_gas_station
+```
+
+- Remove image
+
+```bash
+docker rmi -f matic_gas_station
 ```
 
 ## Usage

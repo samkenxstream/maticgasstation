@@ -1,4 +1,4 @@
-const dotnet = require('dotenv')
+const { config } = require('dotenv')
 const path = require('path')
 const Web3 = require('web3')
 const humanizeDuration = require('humanize-duration')
@@ -9,7 +9,7 @@ const { runServer } = require('./serve')
 
 // reading variables from environment file, set them as you 
 // need in .env file in current working directory
-dotnet.config({ path: path.join(__dirname, '.env'), silent: true })
+config({ path: path.join(__dirname, '.env'), silent: true })
 
 // setting environment variables
 const SAFELOW = process.env.SAFELOW || 30
@@ -18,6 +18,15 @@ const FAST = process.env.FAST || 90
 const FASTEST = process.env.FASTEST || 100
 const RPC = process.env.RPC
 const BUFFERSIZE = process.env.BUFFERSIZE || 500
+
+const checkRPC = _ => {
+    if(process.env.RPC == undefined || process.env.RPC == "") {
+        console.error('RPC field not found in ENV')
+        process.exit(1)
+    }
+}
+
+checkRPC()
 
 // obtaining connection to websocket RPC endpoint
 const getWeb3 = () => new Web3(RPC.startsWith('http') ? new Web3.providers.HttpProvider(RPC) : new Web3.providers.WebsocketProvider(RPC))

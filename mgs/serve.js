@@ -3,7 +3,7 @@ const cors = require('cors')
 const app = require('express')()
 const morgan = require('morgan')
 
-const host = process.env.HOST || '127.0.0.1'
+const host = process.env.HOST || '0.0.0.0'
 const port = process.env.PORT || 7000
 
 app.use(morgan('tiny'))

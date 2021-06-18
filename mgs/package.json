@@ -1,7 +1,7 @@
 {
   "name": "mgs",
   "version": "1.0.0",
-  "description": "Matic Gas Station - gas price recommender to developers ;)",
+  "description": "Matic Gas Station - Gas Price recommender",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
