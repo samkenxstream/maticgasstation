@@ -5,6 +5,7 @@ const humanizeDuration = require('humanize-duration')
 const Recommendation = require('./recommendation')
 const Transaction = require('./transaction')
 const Transactions = require('./transactions')
+const { runServer } = require('./serve')
 
 // reading variables from environment file, set them as you 
 // need in .env file in current working directory
@@ -14,9 +15,10 @@ dotnet.config({ path: path.join(__dirname, '.env'), silent: true })
 const SAFELOW = process.env.SAFELOW || 30
 const STANDARD = process.env.STANDARD || 60
 const FAST = process.env.FAST || 90
+const FASTEST = process.env.FASTEST || 100
 const RPC = process.env.RPC || 'wss://ws-mumbai.matic.today'
 const BUFFERSIZE = process.env.BUFFERSIZE || 500
-const SINK = process.env.SINK || '../sink.json'
+const SINK = process.env.SINK || 'sink.json'
 
 // obtaining connection to websocket RPC endpoint
 const getWeb3 = () => new Web3(RPC.startsWith('http') ? new Web3.providers.HttpProvider(RPC) : new Web3.providers.WebsocketProvider(RPC))
@@ -101,7 +103,7 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
         _transactions.getMinGasPriceWithAcceptanceRateX(cumsumGasPrices, SAFELOW),
         _transactions.getMinGasPriceWithAcceptanceRateX(cumsumGasPrices, STANDARD),
         _transactions.getMinGasPriceWithAcceptanceRateX(cumsumGasPrices, FAST),
-        _transactions.getMinGasPriceWithAcceptanceRateX(cumsumGasPrices, 100)
+        _transactions.getMinGasPriceWithAcceptanceRateX(cumsumGasPrices, FASTEST)
     )
     _rec.blockNumber = _transactions.latestBlockNumber
 
@@ -129,4 +131,10 @@ const recommendation = new Recommendation()
 console.log('🔥 Matic Gas Station running ...')
 
 setInterval(updateBlockTime, 60000, web3, recommendation)
-run(web3, transactions, recommendation).then(_ => { }).catch(e => { console.error(e); process.exit(1) })
+
+run(web3, transactions, recommendation).then(_ => {}).catch(e => {
+    console.error(e)
+    process.exit(1)
+})
+
+runServer()
