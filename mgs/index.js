@@ -86,12 +86,14 @@ const processBlock = async (_web3, _transactions, _block) => {
 const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
     let latestBlock = await _web3.eth.getBlock('latest')
 
-    if (latestBlock.transactions.length == 0) {
-        console.log(`❗️ Empty Block : ${latestBlock.number}`)
+    if (!(_transactions.latestBlockNumber < latestBlock.number)) {
         return
     }
 
-    if (!(_transactions.latestBlockNumber < latestBlock.number)) {
+    if (latestBlock.transactions.length == 0) {
+        _rec.blockNumber = latestBlock.number
+
+        console.log(`❗️ Empty Block : ${latestBlock.number}`)
         return
     }
 
