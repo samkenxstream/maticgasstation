@@ -52,7 +52,7 @@ module.exports = class Transactions {
         return buffer.map(v => [v[0], (v[1] / max) * 100])
     }
 
-    // compute gas price recommendation for specified category 
+    // compute gas price recommendation for specified category
     // i.e. {SAFELOW, STANDARD, FAST, FASTEST}, where we'll compute
     // minimum gas price at which all transactions were getting accepted by network
     getMinGasPriceWithAcceptanceRateX = (gasPrices, x) => Math.min(...gasPrices.filter(v => v[1] >= x).map(v => v[0]))

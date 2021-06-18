@@ -16,7 +16,7 @@ const SAFELOW = process.env.SAFELOW || 30
 const STANDARD = process.env.STANDARD || 60
 const FAST = process.env.FAST || 90
 const FASTEST = process.env.FASTEST || 100
-const RPC = process.env.RPC || 'wss://ws-mumbai.matic.today'
+const RPC = process.env.RPC
 const BUFFERSIZE = process.env.BUFFERSIZE || 500
 
 // obtaining connection to websocket RPC endpoint
@@ -130,7 +130,7 @@ console.log('🔥 Matic Gas Station running ...')
 
 setInterval(updateBlockTime, 60000, web3, recommendation)
 
-run(web3, transactions, recommendation).then(_ => {}).catch(e => {
+run(web3, transactions, recommendation).then(_ => { }).catch(e => {
     console.error(e)
     process.exit(1)
 })

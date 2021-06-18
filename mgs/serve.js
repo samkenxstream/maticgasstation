@@ -1,6 +1,5 @@
 const { createServer } = require('http')
 const cors = require('cors')
-const { join } = require('path')
 const app = require('express')()
 const morgan = require('morgan')
 
