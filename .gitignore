@@ -1,4 +1,3 @@
 mgs/.env
 mgs/node_modules
-serve/config.env
-serve/node_modules
+sink.json
