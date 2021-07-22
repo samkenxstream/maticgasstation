@@ -15,12 +15,11 @@ touch .env
 > Note: For `RPC` field, use websocket endpoint of Bor Node
 
 ```
-SAFELOW=30
-STANDARD=60
+SAFELOW=60
+STANDARD=75
 FAST=90
 FASTEST=100
-RPC=wss://<domain>
-BUFFERSIZE=500
+RPC=https://<domain>
 HOST=0.0.0.0
 PORT=7000
 ```
@@ -56,7 +55,7 @@ make build_docker
 - Run docker container
 
 ```bash
-# exposes port 7000 on HOST, 
+# exposes port 7000 on HOST,
 # while expecting PORT field
 # was untouched in .env
 
@@ -117,8 +116,8 @@ You'll receive
   "standard": 3.020000001,
   "fast": 5,
   "fastest": 3870.208681652,
-  "blockTime": 2,
-  "blockNumber": 15854458
+  "sinceLastBlock": "2 seconds",
+  "lastBlockNumber": 15854458
 }
 ```
 
@@ -126,26 +125,25 @@ You'll receive
 
 ### Configuration
 
-Field | Interpretation
---- | ---
-SafeLow | Minimum gas price at which **X** % of last **N** tx(s) got accepted
-Standard | -- do --
-Fast | -- do --
-Fastest | -- do --
-RPC | Bor node's websocket endpoint URL
-BufferSize | Last N tx(s) considered when recommending
-Host | Run HTTP server on interface address
-Port | Accept connections on port
+| Field    | Interpretation                                                      |
+| -------- | ------------------------------------------------------------------- |
+| SafeLow  | Minimum gas price at which **X** % of last **N** tx(s) got accepted |
+| Standard | -- do --                                                            |
+| Fast     | -- do --                                                            |
+| Fastest  | -- do --                                                            |
+| RPC      | Bor node's websocket endpoint URL                                   |
+| Host     | Run HTTP server on interface address                                |
+| Port     | Accept connections on port                                          |
 
 ### Response
 
-Field | Interpretation
---- | ---
-SafeLow | Lowest possible recommended gas price
-Standard | Average gas price seen **( Recommended )**
-Fast | Tx should be included in ~30 sec
-Fastest | Targeted towards traders, super fast inclusion possibility
-BlockTime | Observed delay between two recently mined consequtive blocks
-BlockNumber | Latest considered block in recommendation
+| Field           | Interpretation                                               |
+| --------------- | ------------------------------------------------------------ |
+| SafeLow         | Lowest possible recommended gas price                        |
+| Standard        | Average gas price seen **( Recommended )**                   |
+| Fast            | Tx should be included in ~30 sec                             |
+| Fastest         | Targeted towards traders, super fast inclusion possibility   |
+| SinceLastBlock  | Observed delay between two recently mined consequtive blocks |
+| LastBlockNumber | Latest considered block in recommendation                    |
 
 > Note: All gas prices in `Gwei`
