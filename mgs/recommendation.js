@@ -5,8 +5,8 @@ module.exports = class Recommendation {
     standard = NaN
     fast = NaN
     fastest = NaN
-    blockTime = NaN
-    blockNumber = NaN
+    sinceLastBlock = NaN
+    lastBlockNumber = NaN
 
     // updates gas price recommendation with latest values
     updateGasPrices(safeLow, standard, fast, fastest) {
@@ -14,6 +14,9 @@ module.exports = class Recommendation {
         this.standard = standard
         this.fast = fast
         this.fastest = fastest
+
+        // todo: Remove this logging before production
+        console.log(this)
     }
 
     // To be invoked when responding to client request
@@ -23,8 +26,8 @@ module.exports = class Recommendation {
             standard: this.standard,
             fast: this.fast,
             fastest: this.fastest,
-            blockTime: this.blockTime,
-            blockNumber: this.blockNumber
+            sinceLastBlock: this.sinceLastBlock,
+            lastBlockNumber: this.lastBlockNumber
         }
     }
 }

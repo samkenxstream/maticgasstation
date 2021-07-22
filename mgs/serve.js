@@ -19,7 +19,7 @@ const runServer = _rec => {
     })
 
     createServer(app).listen(port, host, _ => {
-        console.log(`🔥 Listening at http://${host}:${port}`)
+        console.log(`🔥 Listening on http://${host}:${port}`)
     })
 }
 
