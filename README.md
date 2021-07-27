@@ -120,9 +120,10 @@ To get recommendations using v2
 curl -s localhost:7000/v2 | jq
 ```
 
-The following way to request is deprecated. Please change older code to request using the above versioned endpoints (Changed to v1)
+The following way to request is **deprecated**. Please change older code to request using the above versioned endpoints (Changed to v1)
 
 ```bash
+# deprecated use (Use v1 endpoint instead for same results)
 curl -s localhost:7000 | jq
 ```
 
@@ -134,7 +135,7 @@ You'll receive
   "standard": 3.020000001,
   "fast": 5,
   "fastest": 3870.208681652,
-  "sinceLastBlock": 2, // in seconds
+  "sinceLastBlock": 2,
   "lastBlockNumber": 15854458
 }
 ```
@@ -159,13 +160,13 @@ You'll receive
 
 ### Response
 
-| Field           | Interpretation                                               |
-| --------------- | ------------------------------------------------------------ |
-| SafeLow         | Lowest possible recommended gas price                        |
-| Standard        | Average gas price seen **( Recommended )**                   |
-| Fast            | Tx should be included in ~30 sec                             |
-| Fastest         | Targeted towards traders, super fast inclusion possibility   |
-| SinceLastBlock  | Observed delay between two recently mined consequtive blocks |
-| LastBlockNumber | Latest considered block in recommendation                    |
+| Field           | Interpretation                                                          |
+| --------------- | ----------------------------------------------------------------------- |
+| SafeLow         | Lowest possible recommended gas price                                   |
+| Standard        | Average gas price seen **( Recommended )**                              |
+| Fast            | Tx should be included in ~30 sec                                        |
+| Fastest         | Targeted towards traders, super fast inclusion possibility              |
+| SinceLastBlock  | Observed delay between two recently mined consequtive blocks in seconds |
+| LastBlockNumber | Latest considered block in recommendation                               |
 
 > Note: All gas prices in `Gwei`
