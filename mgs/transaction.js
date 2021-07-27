@@ -8,7 +8,7 @@
 //
 // gas price to be used for computing price recommendation
 module.exports = class Transaction {
-  constructor(blockNumber, gasPrice) {
+  constructor (blockNumber, gasPrice) {
     this.blockNumber = blockNumber
     this.gasPrice = gasPrice
   }

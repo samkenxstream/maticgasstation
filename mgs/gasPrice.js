@@ -3,13 +3,13 @@
 // of the price to reduce the footprint
 // and for faster computations
 module.exports = class GasPrice {
-  constructor(gasPrice) {
+  constructor (gasPrice) {
     this.gasPrice = gasPrice
     this.count = 1
   }
 
   // method to increment the count of the gas price
-  incrementCount() {
+  incrementCount () {
     this.count += 1
   }
 }

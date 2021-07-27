@@ -18,8 +18,8 @@ const SAFELOWV1 = process.env.v1SAFELOW || 30
 const STANDARDV1 = process.env.v1STANDARD || 60
 const FASTV1 = process.env.v1FAST || 90
 const FASTESTV1 = process.env.v1FASTEST || 100
-const SAFELOWV2 = process.env.v2SAFELOW || 250
-const STANDARDV2 = process.env.v2STANDARD || 150
+const SAFELOWV2 = process.env.v2SAFELOW || 200
+const STANDARDV2 = process.env.v2STANDARD || 125
 const FASTV2 = process.env.v2FAST || 50
 const FASTESTV2 = process.env.v2FASTEST || 25
 const RPC = process.env.RPC
@@ -38,7 +38,7 @@ checkRPC()
 // putting block time in object, which is keeping track of
 // all data that's to be published, from gas station
 const updateBlockTime = async (_v1Rec, _v2Rec) => {
-  let latestBlock = await axios
+  const latestBlock = await axios
     .post(`${RPC}/graphql`, {
       query: `
           { block { number, timestamp } }
@@ -48,7 +48,7 @@ const updateBlockTime = async (_v1Rec, _v2Rec) => {
       return result.data.data.block
     })
 
-  let previousBlock = await axios
+  const previousBlock = await axios
     .post(`${RPC}/graphql`, {
       query: `
           { block(number: "${latestBlock.number - 1}") { number, timestamp } }
@@ -58,7 +58,7 @@ const updateBlockTime = async (_v1Rec, _v2Rec) => {
       return result.data.data.block
     })
 
-  blockTime = latestBlock.timestamp - previousBlock.timestamp
+  const blockTime = latestBlock.timestamp - previousBlock.timestamp
 
   _v1Rec.blockTime = blockTime
   _v2Rec.blockTime = blockTime
@@ -69,16 +69,16 @@ const updateBlockTime = async (_v1Rec, _v2Rec) => {
 // after that it'll be computing gas price recommendation depending upon past data
 // and env variable values
 const fetchAndProcessConfirmedTxs = async (_transactions, _rec) => {
-  console.log(`🔅-1️⃣ Processing Block`)
+  console.log("🔅-1️⃣ Processing Block")
   const start = new Date().getTime()
 
-  let result = await axios.post(`${RPC}/graphql`, {
+  const result = await axios.post(`${RPC}/graphql`, {
     query: `
           { block { number, transactions { gasPrice } } }
         `,
   })
 
-  let latestBlock = result.data.data.block
+  const latestBlock = result.data.data.block
 
   if (!(_transactions.latestBlockNumber < latestBlock.number)) {
     return
@@ -129,7 +129,7 @@ const fetchAndProcessConfirmedTxs = async (_transactions, _rec) => {
 // using graphQL to fetch
 // can be fetched using txPool API and web3 as well (not implemented here)
 const fetchAndProcessPendingTxs = async (_rec) => {
-  console.log(`🔅-2️⃣ Processing Pending`)
+  console.log("🔅-2️⃣ Processing Pending")
   const start = new Date().getTime()
 
   const gasPriceList = new GasPriceList()
@@ -141,7 +141,7 @@ const fetchAndProcessPendingTxs = async (_rec) => {
         `,
   })
 
-  let latestBlockNumber = result.data.data.block.number
+  const latestBlockNumber = result.data.data.block.number
 
   // updating the last mined block details
   _rec.blockNumber = latestBlockNumber
@@ -152,19 +152,19 @@ const fetchAndProcessPendingTxs = async (_rec) => {
   // and processing for cummulative percentage values
   // to calculate recommendations
   // then, updating the new recommended values
-  var lastProcessedAddress
+  let lastProcessedAddress
   let wontPass = false
   for (let i = 0; i < prices.length; i++) {
-    let gasPrice = parseInt(prices[i].gasPrice)
-    let gas = parseInt(prices[i].gas)
-    let address = prices[i].from.address
+    const gasPrice = parseInt(prices[i].gasPrice)
+    const gas = parseInt(prices[i].gas)
+    const address = prices[i].from.address
     if (address != lastProcessedAddress) {
       lastProcessedAddress = address
       wontPass = false
     }
     if (!wontPass) {
       if (gasPrice / 1e9 >= 1) {
-        gasPriceList.add(prices[i].gasPrice, prices[i].gas)
+        gasPriceList.add(gasPrice, gas)
       } else {
         wontPass = true
       }
@@ -195,8 +195,8 @@ const fetchAndProcessPendingTxs = async (_rec) => {
 
 // sleep for `ms` miliseconds, just do nothing
 const sleep = async (ms) =>
-  new Promise((res, _) => {
-    setTimeout(res, ms)
+  new Promise((resolve, reject) => {
+    setTimeout(resolve, ms)
   })
 
 // infinite loop, to keep fetching latest confirmed txs, for computing
