@@ -15,10 +15,14 @@ touch .env
 > Note: For `RPC` field, use websocket endpoint of Bor Node
 
 ```
-SAFELOW=60
-STANDARD=75
-FAST=90
-FASTEST=100
+v1SAFELOW=60
+v1STANDARD=75
+v1FAST=90
+v1FASTEST=100
+v2SAFELOW=250
+v2STANDARD=150
+v2FAST=50
+v2FASTEST=25
 RPC=https://<domain>
 HOST=0.0.0.0
 PORT=7000
@@ -104,6 +108,20 @@ docker rmi -f matic_gas_station
 
 Send HTTP GET request
 
+To get recommendations using v1
+
+```bash
+curl -s localhost:7000/v1 | jq
+```
+
+To get recommendations using v2
+
+```bash
+curl -s localhost:7000/v2 | jq
+```
+
+The following way to request is deprecated. Please change older code to request using the above versioned endpoints (Changed to v1)
+
 ```bash
 curl -s localhost:7000 | jq
 ```
@@ -116,7 +134,7 @@ You'll receive
   "standard": 3.020000001,
   "fast": 5,
   "fastest": 3870.208681652,
-  "sinceLastBlock": "2 seconds",
+  "sinceLastBlock": 2, // in seconds
   "lastBlockNumber": 15854458
 }
 ```
@@ -125,15 +143,19 @@ You'll receive
 
 ### Configuration
 
-| Field    | Interpretation                                                      |
-| -------- | ------------------------------------------------------------------- |
-| SafeLow  | Minimum gas price at which **X** % of last **N** tx(s) got accepted |
-| Standard | -- do --                                                            |
-| Fast     | -- do --                                                            |
-| Fastest  | -- do --                                                            |
-| RPC      | Bor node's websocket endpoint URL                                   |
-| Host     | Run HTTP server on interface address                                |
-| Port     | Accept connections on port                                          |
+| Field      | Interpretation                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| v1SafeLow  | Minimum gas price at which **X** % of last **N** tx(s) got accepted                        |
+| v1Standard | -- do --                                                                                   |
+| v1Fast     | -- do --                                                                                   |
+| v1Fastest  | -- do --                                                                                   |
+| v2SafeLow  | Gas price of **X**th transaction currently in the txPool in descending order of gas Prices |
+| v2Standard | -- do --                                                                                   |
+| v2Fast     | -- do --                                                                                   |
+| v2Fastest  | -- do --                                                                                   |
+| RPC        | Bor node's websocket endpoint URL                                                          |
+| Host       | Run HTTP server on interface address                                                       |
+| Port       | Accept connections on port                                                                 |
 
 ### Response
 

@@ -1,62 +1,55 @@
 // class to define the list of pasPrice objects
-const GasPrice = require("./gasPrice");
+const GasPrice = require("./gasPrice")
 
 module.exports = class GasPriceList {
   constructor() {
-    this.priceCounts = {};
-    this.totalSum = 0;
-    this.cumSumPercentages = [];
+    this.priceCounts = {}
+    this.prices = []
+    this.totalCount = 0
   }
 
   // add new gas prices to the list
   //
   // if the price already exists previously,
   // we will just be incrementing the count
-  // else, we create and add a new object to the lsit
-  add(gasPriceHex) {
-    const gasPrice = parseInt(gasPriceHex) / 1e9;
-    this.totalSum += gasPrice;
-    if (gasPrice in this.priceCounts) {
-      this.priceCounts[gasPrice].incrementCount();
-    } else {
-      this.priceCounts[gasPrice] = new GasPrice(gasPrice);
+  // else, we create and add a new object to the list
+  add(gasPriceHex, gasHex) {
+    const gasPrice = parseInt(gasPriceHex) / 1e9
+    const gas = parseInt(gasHex) / 1e9
+    if ((gasPrice * gas) / 1e18 < 1) {
+      this.totalCount += 1
+      if (gasPrice in this.priceCounts) {
+        this.priceCounts[gasPrice].incrementCount()
+      } else {
+        this.priceCounts[gasPrice] = new GasPrice(gasPrice)
+      }
     }
   }
 
-  // We were holding the priceCounts in a dictionary for cheaper
-  // look ups to verify if the price object already exists.
-  // But to order those prices for further computations,
-  // we'll be converting them into an array object
-  // and then sort it in ascending order
-  extractGasPrices = () => Object.values(this.priceCounts);
-
-  ascendingGasPrices = () =>
-    this.extractGasPrices().sort((a, b) => a.gasPrice - b.gasPrice);
-
-  //compute cumulative percentage of gas prices, from cumulative sum
-  getCumulativePercentages() {
-    let prices = this.ascendingGasPrices();
-    let upto = 0;
-
-    for (let i = 0; i < prices.length; i++) {
-      upto += prices[i].gasPrice * prices[i].count;
-      this.cumSumPercentages.push([
-        prices[i].gasPrice,
-        (upto / this.totalSum) * 100,
-      ]);
+  // To order these prices for further computations,
+  // we'll be sorting it in descending order.
+  // Since we used a dict to store price counts for
+  // faster verisication, we'll be converting these
+  // prices to an array before sorthing them.
+  orderPrices() {
+    let set = Object.values(this.priceCounts).sort(
+      (a, b) => b.gasPrice - a.gasPrice
+    )
+    let upto = 0
+    for (let i = 1; i < set.length; i++) {
+      upto += set[i].count
+      this.prices.push([set[i].gasPrice, upto])
     }
   }
 
   // compute gasPrice recommendations as per the given threshold
   getRecommendation(threshold) {
-    if (threshold != 100) {
-      return Math.min(
-        ...this.cumSumPercentages
-          .filter((v) => v[1] >= threshold)
-          .map((v) => v[0])
-      );
+    if (threshold < this.totalCount) {
+      return Math.max(
+        ...this.prices.filter((v) => v[1] >= threshold).map((v) => v[0])
+      )
     } else {
-      return this.cumSumPercentages.slice(-1)[0][0];
+      return this.prices[-1][0]
     }
   }
-};
+}

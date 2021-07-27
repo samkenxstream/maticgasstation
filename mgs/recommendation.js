@@ -1,22 +1,19 @@
 // class for storing, publishing gas price recommendations
 // along with blocktime & block number when recommendation was made
 module.exports = class Recommendation {
-  safeLow = NaN;
-  standard = NaN;
-  fast = NaN;
-  fastest = NaN;
-  sinceLastBlock = NaN;
-  lastBlockNumber = NaN;
+  safeLow = NaN
+  standard = NaN
+  fast = NaN
+  fastest = NaN
+  blockTime = NaN
+  blockNumber = NaN
 
   // updates gas price recommendation with latest values
   updateGasPrices(safeLow, standard, fast, fastest) {
-    this.safeLow = safeLow;
-    this.standard = standard;
-    this.fast = fast;
-    this.fastest = fastest;
-
-    // todo: Remove this logging before production
-    console.log(this);
+    this.safeLow = safeLow
+    this.standard = standard
+    this.fast = fast
+    this.fastest = fastest
   }
 
   // To be invoked when responding to client request
@@ -26,8 +23,8 @@ module.exports = class Recommendation {
       standard: this.standard,
       fast: this.fast,
       fastest: this.fastest,
-      sinceLastBlock: this.sinceLastBlock,
-      lastBlockNumber: this.lastBlockNumber,
-    };
+      blockTime: this.blockTime,
+      blockNumber: this.blockNumber,
+    }
   }
-};
+}

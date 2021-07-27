@@ -4,12 +4,12 @@
 // and for faster computations
 module.exports = class GasPrice {
   constructor(gasPrice) {
-    this.gasPrice = gasPrice;
-    this.count = 1;
+    this.gasPrice = gasPrice
+    this.count = 1
   }
 
   // method to increment the count of the gas price
   incrementCount() {
-    this.count += 1;
+    this.count += 1
   }
-};
+}
