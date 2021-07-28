@@ -24,6 +24,7 @@ v2STANDARD=150
 v2FAST=50
 v2FASTEST=25
 RPC=https://<domain>
+BUFFERSIZE=500
 HOST=0.0.0.0
 PORT=7000
 ```
@@ -155,6 +156,7 @@ You'll receive
 | v2Fast     | -- do --                                                                                   |
 | v2Fastest  | -- do --                                                                                   |
 | RPC        | Bor node's websocket endpoint URL                                                          |
+| BufferSize | Last N tx(s) considered when recommending                                                  |
 | Host       | Run HTTP server on interface address                                                       |
 | Port       | Accept connections on port                                                                 |
 
