@@ -48,10 +48,10 @@ module.exports = class RecommendationV2 {
             }
         }
         return {
-            safeLow: this.safeLow.sort((a, b) => a - b)[Math.floor(this.safeLowThreshold)],
-            standard: this.standard.sort((a, b) => a - b)[Math.floor(this.standardThreshold)],
-            fast: this.fast.sort((a, b) => a - b)[Math.floor(this.fastThreshold)],
-            fastest: this.fastest.sort((a, b) => a - b)[Math.floor(this.fastestThreshold)],
+            safeLow: [...this.safeLow].sort((a, b) => a - b)[Math.floor(this.safeLowThreshold)],
+            standard: [...this.standard].sort((a, b) => a - b)[Math.floor(this.standardThreshold)],
+            fast: [...this.fast].sort((a, b) => a - b)[Math.floor(this.fastThreshold)],
+            fastest: [...this.fastest].sort((a, b) => a - b)[Math.floor(this.fastestThreshold)],
             blockTime: this.blockTime,
             blockNumber: this.blockNumber,
         }
