@@ -19,67 +19,52 @@ const RPC = process.env.RPC
 // fetch pending transactions' gas prices from the txPool of the node
 // using graphQL to fetch
 // can be fetched using txPool API and web3 as well (not implemented here)
-exports.fetchAndProcessPendingTxs = async (_rec) => {
-  console.log('🔅-2️⃣ Processing Pending')
-  const start = new Date().getTime()
+exports.fetchAndProcessPendingTxs = async (_rec, _avgBlockSize) => {
+    const gasPriceList = new GasPriceList()
 
-  const gasPriceList = new GasPriceList()
-
-  // querying for pending txs
-  const result = await axios.post(`${RPC}/graphql`, {
-    query: `
+    // querying for pending txs
+    const result = await axios.post(`${RPC}/graphql`, {
+        query: `
             { block { number }, pending { transactions { gasPrice, gas, from { address } } } }
           `
-  })
+    })
 
-  const latestBlockNumber = result.data.data.block.number
+    const latestBlockNumber = result.data.data.block.number
 
-  // updating the last mined block details
-  _rec.blockNumber = latestBlockNumber
+    // updating the last mined block details
+    _rec.blockNumber = latestBlockNumber
 
-  const prices = result.data.data.pending.transactions
+    const prices = result.data.data.pending.transactions
 
-  // adding gas prices to the gasPriceList object
-  // and processing for cummulative percentage values
-  // to calculate recommendations
-  // then, updating the new recommended values
-  let lastProcessedAddress
-  let wontPass = false
-  for (let i = 0; i < prices.length; i++) {
-    const gasPrice = parseInt(prices[i].gasPrice)
-    const gas = parseInt(prices[i].gas)
-    const address = prices[i].from.address
-    if (address != lastProcessedAddress) {
-      lastProcessedAddress = address
-      wontPass = false
+    // adding gas prices to the gasPriceList object
+    // and processing for cummulative percentage values
+    // to calculate recommendations
+    // then, updating the new recommended values
+    let lastProcessedAddress
+    let wontPass = false
+    for (let i = 0; i < prices.length; i++) {
+        const gasPrice = parseInt(prices[i].gasPrice)
+        const gas = parseInt(prices[i].gas)
+        const address = prices[i].from.address
+        if (address != lastProcessedAddress) {
+            lastProcessedAddress = address
+            wontPass = false
+        }
+        if (!wontPass) {
+            if (gasPrice >= 1000000000) {
+                gasPriceList.add(gasPrice, gas)
+            } else {
+                wontPass = true
+            }
+        }
     }
-    if (!wontPass) {
-      if (gasPrice / 1e9 >= 1) {
-        gasPriceList.add(gasPrice, gas)
-      } else {
-        wontPass = true
-      }
-    }
-  }
 
-  console.log(
-        `✅-2️⃣ Processed pending : ${latestBlockNumber} in ${humanizeDuration(
-            new Date().getTime() - start
-        )}`
-  )
+    if (gasPriceList.totalCount > 0) { gasPriceList.orderPrices() }
 
-  gasPriceList.orderPrices()
-
-  _rec.updateGasPrices(
-    gasPriceList.getRecommendation(SAFELOWV2),
-    gasPriceList.getRecommendation(STANDARDV2),
-    gasPriceList.getRecommendation(FASTV2),
-    gasPriceList.getRecommendation(FASTESTV2)
-  )
-
-  console.log(
-        `👍-2️⃣ Recommendation on block ${latestBlockNumber} in ${humanizeDuration(
-            new Date().getTime() - start
-        )}`
-  )
+    _rec.updateGasPrices(
+        gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * SAFELOWV2)),
+        gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * STANDARDV2)),
+        gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * FASTV2)),
+        gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * FASTESTV2))
+    )
 }

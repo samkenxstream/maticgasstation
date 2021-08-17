@@ -5,7 +5,7 @@ module.exports = class Recommendation {
   standard = NaN
   fast = NaN
   fastest = NaN
-  blockTime = NaN
+  blockTime = 2
   blockNumber = NaN
 
   // updates gas price recommendation with latest values

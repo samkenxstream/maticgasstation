@@ -2,7 +2,7 @@
 const GasPrice = require('./gasPrice')
 
 module.exports = class GasPriceList {
-  constructor () {
+  constructor() {
     this.priceCounts = {}
     this.prices = []
     this.totalCount = 0
@@ -13,7 +13,7 @@ module.exports = class GasPriceList {
   // if the price already exists previously,
   // we will just be incrementing the count
   // else, we create and add a new object to the list
-  add (_gasPrice, _gas) {
+  add(_gasPrice, _gas) {
     const gasPrice = _gasPrice / 1e9
     const gas = _gas / 1e9
     if (gasPrice * gas < 1) {
@@ -31,25 +31,27 @@ module.exports = class GasPriceList {
   // Since we used a dict to store price counts for
   // faster verisication, we'll be converting these
   // prices to an array before sorthing them.
-  orderPrices () {
+  orderPrices() {
     const set = Object.values(this.priceCounts).sort(
       (a, b) => b.gasPrice - a.gasPrice
     )
     let upto = 0
-    for (let i = 1; i < set.length; i++) {
+    for (let i = 0; i < set.length; i++) {
       upto += set[i].count
       this.prices.push([set[i].gasPrice, upto])
     }
   }
 
   // compute gasPrice recommendations as per the given threshold
-  getRecommendation (threshold) {
-    if (threshold < this.totalCount) {
+  getRecommendation(threshold) {
+    if (this.totalCount == 0) {
+      return 1
+    } else if (threshold < this.prices.length) {
       return Math.max(
         ...this.prices.filter((v) => v[1] >= threshold).map((v) => v[0])
       )
     } else {
-      return this.prices[-1][0]
+      return this.prices[this.prices.length - 1][0]
     }
   }
 }

@@ -17,17 +17,21 @@ const RPC = process.env.RPC
 // then we'll process each transaction in it, put them in transaction pool,
 // after that it'll be computing gas price recommendation depending upon past data
 // and env variable values
-exports.fetchAndProcessConfirmedTxs = async (_transactions, _rec) => {
-  console.log('🔅-1️⃣ Processing Block')
+exports.fetchAndProcessConfirmedTxs = async (_transactions, _rec, _avgBlockSize) => {
   const start = new Date().getTime()
 
   const result = await axios.post(`${RPC}/graphql`, {
     query: `
-            { block { number, transactions { gasPrice } } }
+    { block { number, transactions { gasPrice }, gasUsed, gasLimit } }
           `
   })
 
   const latestBlock = result.data.data.block
+  const blockSize = latestBlock.transactions.length
+  const gasUsed = latestBlock.gasUsed
+  const gasLimit = latestBlock.gasLimit
+
+  if (blockSize > 0) { _avgBlockSize.changeSize(Math.floor((_avgBlockSize.blockSize * 24 + (blockSize * gasLimit / gasUsed)) / 25)) }
 
   if (!(_transactions.latestBlockNumber < latestBlock.number)) {
     return
@@ -36,11 +40,10 @@ exports.fetchAndProcessConfirmedTxs = async (_transactions, _rec) => {
   _rec.blockNumber = latestBlock.number
 
   if (latestBlock.transactions.length == 0) {
-    console.log(`❗️-1️⃣ Empty Block : ${latestBlock.number}`)
     return
   }
 
-  for (let i = 0; i < latestBlock.transactions.length; i++) {
+  for (let i = 0; i < blockSize; i++) {
     _transactions.add(
       new Transaction(
         latestBlock.number,
@@ -48,12 +51,6 @@ exports.fetchAndProcessConfirmedTxs = async (_transactions, _rec) => {
       )
     )
   }
-
-  console.log(
-        `✅-1️⃣ Block : ${latestBlock.number} in ${humanizeDuration(
-            new Date().getTime() - start
-        )}`
-  )
 
   const cumsumGasPrices = _transactions.cumulativePercentageOfGasPrices()
 
@@ -65,11 +62,5 @@ exports.fetchAndProcessConfirmedTxs = async (_transactions, _rec) => {
     ),
     _transactions.getMinGasPriceWithAcceptanceRateX(cumsumGasPrices, FASTV1),
     _transactions.getMinGasPriceWithAcceptanceRateX(cumsumGasPrices, FASTESTV1)
-  )
-
-  console.log(
-        `👍-1️⃣ Recommendation on block ${latestBlock.number} in ${humanizeDuration(
-            new Date().getTime() - start
-        )}`
   )
 }

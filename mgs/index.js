@@ -7,7 +7,9 @@ const v2 = require('./v2/v2')
 
 const Transactions = require('./v1/transactions')
 const Recommendation = require('./recommendation')
+const RecommendationV2 = require('./recommendation_v2')
 const { runServer } = require('./serve')
+const BlockSize = require('./blockSize')
 
 // reading variables from environment file, set them as you
 // need in .env file in current working directory
@@ -16,6 +18,10 @@ config({ path: path.join(__dirname, '.env'), silent: true })
 // setting environment variables
 const RPC = process.env.RPC
 const BUFFERSIZE = process.env.BUFFERSIZE || 500
+const SAFELOWV2 = process.env.v2SAFELOW || 3.25
+const STANDARDV2 = process.env.v2STANDARD || 2.5
+const FASTV2 = process.env.v2FAST || 1.75
+const FASTESTV2 = process.env.v2FASTEST || 1
 
 // Assert RPC is defined
 const checkRPC = (_) => {
@@ -64,18 +70,18 @@ const sleep = async (ms) =>
 
 // infinite loop, to keep fetching latest confirmed txs, for computing
 // v1 gas price recommendations
-const runV1 = async (_transactions, _rec) => {
+const runV1 = async (_transactions, _rec, _avgBlockSize) => {
   while (true) {
-    await v1.fetchAndProcessConfirmedTxs(_transactions, _rec)
+    await v1.fetchAndProcessConfirmedTxs(_transactions, _rec, _avgBlockSize)
     await sleep(1000)
   }
 }
 
 // infinite loop, to keep fetching latest pending txs, for computing
 // v2 gas price recommendations
-const runV2 = async (_rec) => {
+const runV2 = async (_rec, _avgBlockSize) => {
   while (true) {
-    await v2.fetchAndProcessPendingTxs(_rec)
+    await v2.fetchAndProcessPendingTxs(_rec, _avgBlockSize)
     await sleep(1000)
   }
 }
@@ -83,20 +89,21 @@ const runV2 = async (_rec) => {
 // const web3 = getWeb3()
 const transactions = new Transactions(BUFFERSIZE)
 const v1Recommendation = new Recommendation()
-const v2Recommendation = new Recommendation()
+const v2Recommendation = new RecommendationV2(SAFELOWV2, STANDARDV2, FASTV2, FASTESTV2)
+const avgBlockSize = new BlockSize(200)
 
 console.log('🔥 Matic Gas Station running ...')
 
 setInterval(updateBlockTime, 60000, v1Recommendation, v2Recommendation)
 
-runV1(transactions, v1Recommendation)
-  .then((_) => { })
+runV1(transactions, v1Recommendation, avgBlockSize)
+  .then(() => { })
   .catch((e) => {
     console.error(e)
     process.exit(1)
   })
 
-runV2(v2Recommendation)
+runV2(v2Recommendation, avgBlockSize)
   .then((_) => { })
   .catch((e) => {
     console.error(e)
