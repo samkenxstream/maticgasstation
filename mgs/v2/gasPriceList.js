@@ -35,12 +35,12 @@ module.exports = class GasPriceList {
     const set = Object.values(this.priceCounts).sort(
       (a, b) => b.gasPrice - a.gasPrice
     )
+    const startFrom = parseInt(Math.floor(this.totalCount / 50))
     let upto = 0
-    for (let i = 0; i < set.length; i++) {
+    for (let i = startFrom; i < set.length; i++) {
       upto += set[i].count
       this.prices.push([set[i].gasPrice, upto])
     }
-    this.prices = this.prices.slice(Math.floor(this.totalCount / 10))
   }
 
   // compute gasPrice recommendations as per the given threshold
