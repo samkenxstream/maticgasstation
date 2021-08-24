@@ -37,9 +37,11 @@ module.exports = class GasPriceList {
     )
     const startFrom = parseInt(Math.floor(this.totalCount / 50))
     let upto = 0
-    for (let i = startFrom; i < set.length; i++) {
+    for (let i = 0; i < set.length; i++) {
       upto += set[i].count
-      this.prices.push([set[i].gasPrice, upto])
+      if (upto > startFrom) {
+        this.prices.push([set[i].gasPrice, upto - startFrom])
+      }
     }
   }
 
