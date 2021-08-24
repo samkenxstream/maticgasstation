@@ -17,17 +17,8 @@ module.exports = class RecommendationV2 {
 
     // updates gas price recommendation with latest values
     updateGasPrices(safeLow, standard, fast, fastest) {
-        if (this.safeLow.length >= 3 * this.safeLowThreshold) {
+        if (this.safeLow.length >= 5) {
             this.safeLow.shift()
-        }
-        if (this.standard.length >= 3 * this.standardThreshold) {
-            this.standard.shift()
-        }
-        if (this.fast.length >= 3 * this.fastThreshold) {
-            this.fast.shift()
-        }
-        if (this.fastest.length >= 3 * this.fastestThreshold) {
-            this.fastest.shift()
         }
         this.safeLow.push(safeLow)
         this.standard.push(standard)
@@ -48,10 +39,10 @@ module.exports = class RecommendationV2 {
             }
         }
         return {
-            safeLow: [...this.safeLow].sort((a, b) => a - b)[Math.floor(this.safeLowThreshold)],
-            standard: [...this.standard].sort((a, b) => a - b)[Math.floor(this.standardThreshold)],
-            fast: [...this.fast].sort((a, b) => a - b)[Math.floor(this.fastThreshold)],
-            fastest: [...this.fastest].sort((a, b) => a - b)[Math.floor(this.fastestThreshold)],
+            safeLow: Math.min.apply(null, this.safeLow),
+            standard: Math.min.apply(null, this.standard),
+            fast: Math.min.apply(null, this.fast),
+            fastest: Math.min.apply(null, this.fastest),
             blockTime: this.blockTime,
             blockNumber: this.blockNumber,
         }

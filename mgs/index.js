@@ -36,30 +36,37 @@ checkRPC()
 // putting block time in object, which is keeping track of
 // all data that's to be published, from gas station
 const updateBlockTime = async (_v1Rec, _v2Rec) => {
-  const latestBlock = await axios
-    .post(`${RPC}/graphql`, {
-      query: `
+  var latestBlock
+  var previousBlock
+  try {
+    await axios
+      .post(`${RPC}/graphql`, {
+        query: `
           { block { number, timestamp } }
         `
-    })
-    .then((result) => {
-      return result.data.data.block
-    })
-
-  const previousBlock = await axios
-    .post(`${RPC}/graphql`, {
-      query: `
+      })
+      .then(async (result) => {
+        console.log(result.data.data.block)
+        latestBlock = result.data.data.block
+        await axios
+          .post(`${RPC}/graphql`, {
+            query: `
           { block(number: "${latestBlock.number - 1}") { number, timestamp } }
         `
-    })
-    .then((result) => {
-      return result.data.data.block
-    })
+          })
+          .then((result) => {
+            console.log(result.data.data.block)
+            previousBlock = result.data.data.block
+          })
+      })
 
-  const blockTime = latestBlock.timestamp - previousBlock.timestamp
+    const blockTime = latestBlock.timestamp - previousBlock.timestamp
 
-  _v1Rec.blockTime = blockTime
-  _v2Rec.blockTime = blockTime
+    _v1Rec.blockTime = blockTime
+    _v2Rec.blockTime = blockTime
+  } catch (e) {
+    console.log(e.message)
+  }
 }
 
 // sleep for `ms` miliseconds, just do nothing
@@ -73,7 +80,7 @@ const sleep = async (ms) =>
 const runV1 = async (_transactions, _rec, _avgBlockSize) => {
   while (true) {
     await v1.fetchAndProcessConfirmedTxs(_transactions, _rec, _avgBlockSize)
-    await sleep(1000)
+    await sleep(5000)
   }
 }
 
@@ -82,7 +89,7 @@ const runV1 = async (_transactions, _rec, _avgBlockSize) => {
 const runV2 = async (_rec, _avgBlockSize) => {
   while (true) {
     await v2.fetchAndProcessPendingTxs(_rec, _avgBlockSize)
-    await sleep(1000)
+    await sleep(5000)
   }
 }
 

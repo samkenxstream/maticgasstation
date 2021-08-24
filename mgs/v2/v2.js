@@ -42,6 +42,7 @@ exports.fetchAndProcessPendingTxs = async (_rec, _avgBlockSize) => {
     // then, updating the new recommended values
     let lastProcessedAddress
     let wontPass = false
+    let lowestGasPrice = Math.min.apply(null, _avgBlockSize.lowestGasPrice)
     for (let i = 0; i < prices.length; i++) {
         const gasPrice = parseInt(prices[i].gasPrice)
         const gas = parseInt(prices[i].gas)
@@ -51,7 +52,7 @@ exports.fetchAndProcessPendingTxs = async (_rec, _avgBlockSize) => {
             wontPass = false
         }
         if (!wontPass) {
-            if (gasPrice >= 1000000000) {
+            if (gasPrice >= lowestGasPrice) {
                 gasPriceList.add(gasPrice, gas)
             } else {
                 wontPass = true
@@ -59,12 +60,14 @@ exports.fetchAndProcessPendingTxs = async (_rec, _avgBlockSize) => {
         }
     }
 
-    if (gasPriceList.totalCount > 0) { gasPriceList.orderPrices() }
+    if (gasPriceList.totalCount > 0) {
+        gasPriceList.orderPrices()
 
-    _rec.updateGasPrices(
-        gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * SAFELOWV2)),
-        gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * STANDARDV2)),
-        gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * FASTV2)),
-        gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * FASTESTV2))
-    )
+        _rec.updateGasPrices(
+            gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * SAFELOWV2)),
+            gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * STANDARDV2)),
+            gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * FASTV2)),
+            gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * FASTESTV2))
+        )
+    }
 }

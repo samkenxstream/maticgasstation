@@ -31,7 +31,12 @@ exports.fetchAndProcessConfirmedTxs = async (_transactions, _rec, _avgBlockSize)
   const gasUsed = latestBlock.gasUsed
   const gasLimit = latestBlock.gasLimit
 
-  if (blockSize > 0) { _avgBlockSize.changeSize(Math.floor((_avgBlockSize.blockSize * 24 + (blockSize * gasLimit / gasUsed)) / 25)) }
+  if (blockSize > 0) {
+    _avgBlockSize.changeSize(
+      Math.floor((_avgBlockSize.blockSize * 24 + (blockSize * gasLimit / gasUsed)) / 25),
+      parseInt(latestBlock.transactions[blockSize - 1].gasPrice)
+    )
+  }
 
   if (!(_transactions.latestBlockNumber < latestBlock.number)) {
     return

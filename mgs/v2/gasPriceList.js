@@ -40,6 +40,7 @@ module.exports = class GasPriceList {
       upto += set[i].count
       this.prices.push([set[i].gasPrice, upto])
     }
+    this.prices = this.prices.slice(Math.floor(this.totalCount / 10))
   }
 
   // compute gasPrice recommendations as per the given threshold
