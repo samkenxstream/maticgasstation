@@ -1,6 +1,6 @@
 const { config } = require('dotenv')
 const path = require('path')
-var Web3 = require('web3')
+const Web3 = require('web3')
 const redis = require('redis')
 const { promisify } = require('util')
 
@@ -20,7 +20,7 @@ const RPC = process.env.RPC
 
 // Assert RPC is defined
 const checkRPC = (_) => {
-  if (process.env.RPC == undefined || process.env.RPC == '') {
+  if (process.env.RPC === undefined || process.env.RPC === '') {
     console.error('RPC field not found in ENV')
     process.exit(1)
   }
@@ -50,7 +50,7 @@ const run = async (_rec1, _rec2) => {
   pendingSubscription.on('data', (txHash) => {
     setTimeout(async () => {
       try {
-        let tx = await web3.eth.getTransaction(txHash)
+        const tx = await web3.eth.getTransaction(txHash)
         if (tx) {
           const gasPrice = parseInt(tx.gasPrice)
           const gas = tx.gas
@@ -79,18 +79,17 @@ const run = async (_rec1, _rec2) => {
         lastBlockTime = result.timestamp
 
         console.log(`processing ${lastProcessedBlock}`)
-        for (let txIndex in result.transactions) {
+        for (const txIndex in result.transactions) {
           const txHash = result.transactions[txIndex]
           client.get(txHash, function (error, tx) {
             if (tx) {
-              transaction = JSON.parse(tx)
+              const transaction = JSON.parse(tx)
               const timeInPendingPool = result.timestamp - Math.floor(transaction.timestamp / 1000)
               transaction.status = 1
               transaction.pool = timeInPendingPool <= 10 ? 0 : timeInPendingPool <= 30 ? 1 : timeInPendingPool <= 60 ? 2 : 3
               client.setex(txHash, 60, JSON.stringify(transaction))
-              if (transaction.pool != transaction.prediction) {
-                console.log(`incorrectly predicted ${transaction.pool} as ${transaction.prediction}`)
-              }
+            } else if (error) {
+              console.error(error)
             }
           })
         }
@@ -102,18 +101,18 @@ const run = async (_rec1, _rec2) => {
 
 const getRecommendations = async (_rec1, _rec2) => {
   while (true) {
-    let fastestPool = []
-    let fastPool = []
-    let standardPool = []
-    let safePool = []
-    let keys = await getKeysAsync('*')
+    const fastestPool = []
+    const fastPool = []
+    const standardPool = []
+    const safePool = []
+    const keys = await getKeysAsync('*')
     client.mget(keys, (error, transactions) => {
       if (transactions) {
-        for (i in transactions) {
+        for (const i in transactions) {
           if (transactions[i]) {
-            tx = JSON.parse(transactions[i])
-            if (tx.status == 1) {
-              tx.pool == 0 ? fastestPool.push(tx.gasPrice) : tx.pool == 1 ? fastPool.push(tx.gasPrice) : tx.pool == 2 ? standardPool.push(tx.gasPrice) : safePool.push(tx.gasPrice)
+            const tx = JSON.parse(transactions[i])
+            if (tx.status === 1) {
+              tx.pool === 0 ? fastestPool.push(tx.gasPrice) : tx.pool === 1 ? fastPool.push(tx.gasPrice) : tx.pool === 2 ? standardPool.push(tx.gasPrice) : safePool.push(tx.gasPrice)
             }
           }
         }
@@ -121,6 +120,8 @@ const getRecommendations = async (_rec1, _rec2) => {
         v1.predictV1([].concat(fastestPool, fastPool, standardPool, safePool), _rec1)
 
         v2.predictV2(fastestPool, fastPool, standardPool, safePool, _rec2)
+      } else if (error) {
+        console.error(error)
       }
     })
     await sleep(5000)
@@ -129,7 +130,7 @@ const getRecommendations = async (_rec1, _rec2) => {
 
 const v1Recommendation = new Recommendation()
 const v2Recommendation = new Recommendation()
-var web3 = new Web3(RPC)
+const web3 = new Web3(RPC)
 const client = redis.createClient()
 const getKeysAsync = promisify(client.keys).bind(client)
 

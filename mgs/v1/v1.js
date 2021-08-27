@@ -15,12 +15,12 @@ const FASTESTV1 = process.env.v1FASTEST || 35
 exports.predictV1 = (_prices, _rec) => {
   let upto = 0
   _prices.sort((a, b) => a - b)
-  let buffer = []
-  for (i in _prices) {
+  const buffer = []
+  for (const i in _prices) {
     upto += _prices[i]
     buffer.push([_prices[i], upto])
   }
-  for (i in buffer) {
+  for (const i in buffer) {
     buffer[i][1] = buffer[i][1] * 100 / upto
   }
   _rec.updateGasPrices(
