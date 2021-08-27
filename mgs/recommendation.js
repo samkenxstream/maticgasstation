@@ -1,11 +1,11 @@
 // class for storing, publishing gas price recommendations
 // along with blocktime & block number when recommendation was made
 module.exports = class Recommendation {
-  safeLow = NaN
-  standard = NaN
-  fast = NaN
-  fastest = NaN
-  blockTime = 2
+  safeLow = 1000000000
+  standard = 1000000000
+  fast = 1000000000
+  fastest = 1000000000
+  blockTime = NaN
   blockNumber = NaN
 
   // updates gas price recommendation with latest values
@@ -19,10 +19,10 @@ module.exports = class Recommendation {
   // To be invoked when responding to client request
   servable() {
     return {
-      safeLow: this.safeLow,
-      standard: this.standard,
-      fast: this.fast,
-      fastest: this.fastest,
+      safeLow: this.safeLow / 1e9,
+      standard: this.standard / 1e9,
+      fast: this.fast / 1e9,
+      fastest: this.fastest / 1e9,
       blockTime: this.blockTime,
       blockNumber: this.blockNumber,
     }

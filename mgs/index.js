@@ -1,15 +1,15 @@
 const { config } = require('dotenv')
 const path = require('path')
-const axios = require('axios')
+var Web3 = require('web3')
+const redis = require('redis')
+const { promisify } = require('util')
 
 const v1 = require('./v1/v1')
 const v2 = require('./v2/v2')
 
-const Transactions = require('./v1/transactions')
 const Recommendation = require('./recommendation')
-const RecommendationV2 = require('./recommendation_v2')
+const Transaction = require('./tx')
 const { runServer } = require('./serve')
-const BlockSize = require('./blockSize')
 
 // reading variables from environment file, set them as you
 // need in .env file in current working directory
@@ -17,11 +17,6 @@ config({ path: path.join(__dirname, '.env'), silent: true })
 
 // setting environment variables
 const RPC = process.env.RPC
-const BUFFERSIZE = process.env.BUFFERSIZE || 500
-const SAFELOWV2 = process.env.v2SAFELOW || 3.25
-const STANDARDV2 = process.env.v2STANDARD || 2.5
-const FASTV2 = process.env.v2FAST || 1.75
-const FASTESTV2 = process.env.v2FASTEST || 1
 
 // Assert RPC is defined
 const checkRPC = (_) => {
@@ -33,84 +28,121 @@ const checkRPC = (_) => {
 
 checkRPC()
 
-// putting block time in object, which is keeping track of
-// all data that's to be published, from gas station
-const updateBlockTime = async (_v1Rec, _v2Rec) => {
-  var latestBlock
-  var previousBlock
-  try {
-    await axios
-      .post(`${RPC}/graphql`, {
-        query: `
-          { block { number, timestamp } }
-        `
-      })
-      .then(async (result) => {
-        console.log(result.data.data.block)
-        latestBlock = result.data.data.block
-        await axios
-          .post(`${RPC}/graphql`, {
-            query: `
-          { block(number: "${latestBlock.number - 1}") { number, timestamp } }
-        `
-          })
-          .then((result) => {
-            console.log(result.data.data.block)
-            previousBlock = result.data.data.block
-          })
-      })
-
-    const blockTime = latestBlock.timestamp - previousBlock.timestamp
-
-    _v1Rec.blockTime = blockTime
-    _v2Rec.blockTime = blockTime
-  } catch (e) {
-    console.log(e.message)
-  }
-}
-
 // sleep for `ms` miliseconds, just do nothing
 const sleep = async (ms) =>
   new Promise((resolve, reject) => {
     setTimeout(resolve, ms)
   })
 
-// infinite loop, to keep fetching latest confirmed txs, for computing
-// v1 gas price recommendations
-const runV1 = async (_transactions, _rec, _avgBlockSize) => {
-  while (true) {
-    await v1.fetchAndProcessConfirmedTxs(_transactions, _rec, _avgBlockSize)
-    await sleep(5000)
-  }
-}
-
-// infinite loop, to keep fetching latest pending txs, for computing
+// infinite loop, to keep fetching latest pending txs, and confirmed transactions for computing
 // v2 gas price recommendations
-const runV2 = async (_rec, _avgBlockSize) => {
+const run = async (_rec1, _rec2) => {
+  let lastProcessedBlock = 0
+  let lastBlockTime = 0
+
+  const pendingSubscription = web3.eth.subscribe('pendingTransactions', (err, res) => {
+    if (err) {
+      console.log('error1')
+      console.error(err)
+    }
+  })
+
+  pendingSubscription.on('data', (txHash) => {
+    setTimeout(async () => {
+      try {
+        let tx = await web3.eth.getTransaction(txHash)
+        if (tx) {
+          const gasPrice = parseInt(tx.gasPrice)
+          const gas = tx.gas
+          const prediction = gasPrice >= 0.75 * _rec2.fastest ? 0 : gasPrice >= 0.75 * _rec2.fast ? 1 : gasPrice >= 0.75 * _rec2.standard ? 2 : gasPrice >= 0.75 * _rec2.safeLow ? 3 : -1
+          if (gasPrice >= 1e9 && gasPrice * gas <= 1e18) {
+            client.setex(txHash, 180, JSON.stringify(new Transaction(txHash, gasPrice, Date.now(), prediction)))
+          }
+        }
+      } catch (e) {
+        console.log('error2')
+        console.error(e.message)
+      }
+    })
+  })
+
   while (true) {
-    await v2.fetchAndProcessPendingTxs(_rec, _avgBlockSize)
+    await web3.eth.getBlock('latest', (error, result) => {
+      if (error) {
+        console.log('error3')
+        console.error(error)
+      }
+      if (result && result.number > lastProcessedBlock) {
+        _rec1.blockNumber = _rec2.blockNumber = result.number
+        _rec1.blockTime = _rec2.blockTime = (result.timestamp - lastBlockTime) / (result.number - lastProcessedBlock)
+        lastProcessedBlock = result.number
+        lastBlockTime = result.timestamp
+
+        console.log(`processing ${lastProcessedBlock}`)
+        for (let txIndex in result.transactions) {
+          const txHash = result.transactions[txIndex]
+          client.get(txHash, function (error, tx) {
+            if (tx) {
+              transaction = JSON.parse(tx)
+              const timeInPendingPool = result.timestamp - Math.floor(transaction.timestamp / 1000)
+              transaction.status = 1
+              transaction.pool = timeInPendingPool <= 10 ? 0 : timeInPendingPool <= 30 ? 1 : timeInPendingPool <= 60 ? 2 : 3
+              client.setex(txHash, 60, JSON.stringify(transaction))
+              if (transaction.pool != transaction.prediction) {
+                console.log(`incorrectly predicted ${transaction.pool} as ${transaction.prediction}`)
+              }
+            }
+          })
+        }
+      }
+    })
+    await sleep(1000)
+  }
+}
+
+const getRecommendations = async (_rec1, _rec2) => {
+  while (true) {
+    let fastestPool = []
+    let fastPool = []
+    let standardPool = []
+    let safePool = []
+    let keys = await getKeysAsync('*')
+    client.mget(keys, (error, transactions) => {
+      if (transactions) {
+        for (i in transactions) {
+          if (transactions[i]) {
+            tx = JSON.parse(transactions[i])
+            if (tx.status == 1) {
+              tx.pool == 0 ? fastestPool.push(tx.gasPrice) : tx.pool == 1 ? fastPool.push(tx.gasPrice) : tx.pool == 2 ? standardPool.push(tx.gasPrice) : safePool.push(tx.gasPrice)
+            }
+          }
+        }
+
+        v1.predictV1([].concat(fastestPool, fastPool, standardPool, safePool), _rec1)
+
+        v2.predictV2(fastestPool, fastPool, standardPool, safePool, _rec2)
+      }
+    })
     await sleep(5000)
   }
 }
 
-// const web3 = getWeb3()
-const transactions = new Transactions(BUFFERSIZE)
 const v1Recommendation = new Recommendation()
-const v2Recommendation = new RecommendationV2(SAFELOWV2, STANDARDV2, FASTV2, FASTESTV2)
-const avgBlockSize = new BlockSize(200)
+const v2Recommendation = new Recommendation()
+var web3 = new Web3(RPC)
+const client = redis.createClient()
+const getKeysAsync = promisify(client.keys).bind(client)
 
 console.log('🔥 Matic Gas Station running ...')
 
-setInterval(updateBlockTime, 60000, v1Recommendation, v2Recommendation)
-
-runV1(transactions, v1Recommendation, avgBlockSize)
-  .then(() => { })
+run(v1Recommendation, v2Recommendation)
+  .then((_) => { })
   .catch((e) => {
     console.error(e)
     process.exit(1)
   })
 
-runV2(v2Recommendation, avgBlockSize)
+getRecommendations(v1Recommendation, v2Recommendation)
   .then((_) => { })
   .catch((e) => {
     console.error(e)

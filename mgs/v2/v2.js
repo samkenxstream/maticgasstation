@@ -1,73 +1,17 @@
-const { config } = require('dotenv')
-const path = require('path')
-const axios = require('axios')
-const humanizeDuration = require('humanize-duration')
+exports.predictV2 = (_fastestPool, _fastPool, _standardPool, _safePool, _rec) => {
+    _fastestPool.sort((a, b) => a - b)
+    _fastPool.sort((a, b) => a - b)
+    _standardPool.sort((a, b) => a - b)
+    _safePool.sort((a, b) => a - b)
 
-const GasPriceList = require('./gasPriceList')
+    let _fastestRec = _fastestPool.length > 0 ? _fastestPool[Math.floor(_fastestPool.length / 4)] : _rec.fastest
+    let _fastRec = _fastPool.length > 0 ? _fastPool[Math.floor(_fastPool.length / 4)] : _rec.fast
+    let _standardRec = _standardPool.length > 0 ? _standardPool[Math.floor(_standardPool.length / 4)] : _rec.standard
+    let _safeRec = _safePool.length > 0 ? _safePool[Math.floor(_safePool.length / 4)] : _rec.safeLow
 
-// reading variables from environment file, set them as you
-// need in .env file in current working directory
-config({ path: path.join(__dirname, '.env'), silent: true })
+    _standardRec = _standardRec > _safeRec ? _standardRec : _safeRec
+    _fastRec = _fastRec > _standardRec ? _fastRec : _standardRec
+    _fastestRec = _fastestRec > _fastRec ? _fastestRec : _fastRec
 
-// setting environment variables
-const SAFELOWV2 = process.env.v2SAFELOW || 200
-const STANDARDV2 = process.env.v2STANDARD || 125
-const FASTV2 = process.env.v2FAST || 50
-const FASTESTV2 = process.env.v2FASTEST || 25
-const RPC = process.env.RPC
-
-// fetch pending transactions' gas prices from the txPool of the node
-// using graphQL to fetch
-// can be fetched using txPool API and web3 as well (not implemented here)
-exports.fetchAndProcessPendingTxs = async (_rec, _avgBlockSize) => {
-    const gasPriceList = new GasPriceList()
-
-    // querying for pending txs
-    const result = await axios.post(`${RPC}/graphql`, {
-        query: `
-            { block { number }, pending { transactions { gasPrice, gas, from { address } } } }
-          `
-    })
-
-    const latestBlockNumber = result.data.data.block.number
-
-    // updating the last mined block details
-    _rec.blockNumber = latestBlockNumber
-
-    const prices = result.data.data.pending.transactions
-
-    // adding gas prices to the gasPriceList object
-    // and processing for cummulative percentage values
-    // to calculate recommendations
-    // then, updating the new recommended values
-    let lastProcessedAddress
-    let wontPass = false
-    let lowestGasPrice = Math.min.apply(null, _avgBlockSize.lowestGasPrice)
-    for (let i = 0; i < prices.length; i++) {
-        const gasPrice = parseInt(prices[i].gasPrice)
-        const gas = parseInt(prices[i].gas)
-        const address = prices[i].from.address
-        if (address != lastProcessedAddress) {
-            lastProcessedAddress = address
-            wontPass = false
-        }
-        if (!wontPass) {
-            if (gasPrice >= lowestGasPrice) {
-                gasPriceList.add(gasPrice, gas)
-            } else {
-                wontPass = true
-            }
-        }
-    }
-
-    if (gasPriceList.totalCount > 0) {
-        gasPriceList.orderPrices()
-
-        _rec.updateGasPrices(
-            gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * SAFELOWV2)),
-            gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * STANDARDV2)),
-            gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * FASTV2)),
-            gasPriceList.getRecommendation(Math.floor(_avgBlockSize.blockSize * FASTESTV2))
-        )
-    }
+    _rec.updateGasPrices(_safeRec, _standardRec, _fastRec, _fastestRec)
 }
