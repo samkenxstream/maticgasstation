@@ -1,32 +1,21 @@
 const { config } = require('dotenv')
 const path = require('path')
-const Web3 = require('web3')
-const redis = require('redis')
-const { promisify } = require('util')
 
-const v1 = require('./v1/v1')
-const v2 = require('./v2/v2')
+const v1 = require('./api/v1/v1')
+const v2 = require('./api/v2/v2')
 
-const Recommendation = require('./recommendation')
-const Transaction = require('./tx')
-const { runServer } = require('./serve')
+const Recommendation = require('./models/recommendation')
+const Transaction = require('./models/tx')
+const { runServer } = require('./api/serve')
+const RedisClient = require('./helpers/redis')
+const Web3Client = require('./helpers/web3')
 
 // reading variables from environment file, set them as you
 // need in .env file in current working directory
 config({ path: path.join(__dirname, '.env'), silent: true })
 
 // setting environment variables
-const RPC = process.env.RPC
-
-// Assert RPC is defined
-const checkRPC = (_) => {
-  if (process.env.RPC === undefined || process.env.RPC === '') {
-    console.error('RPC field not found in ENV')
-    process.exit(1)
-  }
-}
-
-checkRPC()
+const RPC = process.env.RPC.split(', ')
 
 // sleep for `ms` miliseconds, just do nothing
 const sleep = async (ms) =>
@@ -40,89 +29,58 @@ const run = async (_rec1, _rec2) => {
   let lastProcessedBlock = 0
   let lastBlockTime = 0
 
-  const pendingSubscription = web3.eth.subscribe('pendingTransactions', (err, res) => {
-    if (err) {
-      console.log('error1')
-      console.error(err)
-    }
-  })
-
-  pendingSubscription.on('data', (txHash) => {
+  web3.pendingSubscription.on('data', (txHash) => {
     setTimeout(async () => {
       try {
-        const tx = await web3.eth.getTransaction(txHash)
+        const tx = await web3.web3.eth.getTransaction(txHash)
         if (tx) {
           const gasPrice = parseInt(tx.gasPrice)
           const gas = tx.gas
           const prediction = gasPrice >= 0.75 * _rec2.fastest ? 0 : gasPrice >= 0.75 * _rec2.fast ? 1 : gasPrice >= 0.75 * _rec2.standard ? 2 : gasPrice >= 0.75 * _rec2.safeLow ? 3 : -1
           if (gasPrice >= 1e9 && gasPrice * gas <= 1e18) {
-            client.setex(txHash, 180, JSON.stringify(new Transaction(txHash, gasPrice, Date.now(), prediction)))
+            redisClient.set(txHash, JSON.stringify(new Transaction(txHash, gasPrice, Date.now(), prediction)), 180)
           }
         }
       } catch (e) {
-        console.log('error2')
-        console.error(e.message)
+        console.log('❗ Error fetching transaction')
+        if (e.message !== 'Maximum number of reconnect attempts reached!') {
+          console.error(e)
+        }
       }
     })
   })
 
   while (true) {
-    await web3.eth.getBlock('latest', (error, result) => {
-      if (error) {
-        console.log('error3')
+    try {
+      await web3.web3.eth.getBlock('latest', (error, result) => {
+        if (result && result.number > lastProcessedBlock) {
+          _rec1.blockNumber = _rec2.blockNumber = result.number
+          _rec1.blockTime = _rec2.blockTime = (result.timestamp - lastBlockTime) / (result.number - lastProcessedBlock)
+          lastProcessedBlock = result.number
+          lastBlockTime = result.timestamp
+          for (const txIndex in result.transactions) {
+            const txHash = result.transactions[txIndex]
+            redisClient.confirmTx(txHash, result.timestamp)
+          }
+        }
+      })
+    } catch (error) {
+      console.log('❗ Error fetching latest block')
+      if (error.message !== 'Maximum number of reconnect attempts reached!') {
         console.error(error)
       }
-      if (result && result.number > lastProcessedBlock) {
-        _rec1.blockNumber = _rec2.blockNumber = result.number
-        _rec1.blockTime = _rec2.blockTime = (result.timestamp - lastBlockTime) / (result.number - lastProcessedBlock)
-        lastProcessedBlock = result.number
-        lastBlockTime = result.timestamp
-
-        console.log(`processing ${lastProcessedBlock}`)
-        for (const txIndex in result.transactions) {
-          const txHash = result.transactions[txIndex]
-          client.get(txHash, function (error, tx) {
-            if (tx) {
-              const transaction = JSON.parse(tx)
-              const timeInPendingPool = result.timestamp - Math.floor(transaction.timestamp / 1000)
-              transaction.status = 1
-              transaction.pool = timeInPendingPool <= 10 ? 0 : timeInPendingPool <= 30 ? 1 : timeInPendingPool <= 60 ? 2 : 3
-              client.setex(txHash, 60, JSON.stringify(transaction))
-            } else if (error) {
-              console.error(error)
-            }
-          })
-        }
-      }
-    })
+    }
     await sleep(1000)
   }
 }
 
 const getRecommendations = async (_rec1, _rec2) => {
   while (true) {
-    const fastestPool = []
-    const fastPool = []
-    const standardPool = []
-    const safePool = []
-    const keys = await getKeysAsync('*')
-    client.mget(keys, (error, transactions) => {
-      if (transactions) {
-        for (const i in transactions) {
-          if (transactions[i]) {
-            const tx = JSON.parse(transactions[i])
-            if (tx.status === 1) {
-              tx.pool === 0 ? fastestPool.push(tx.gasPrice) : tx.pool === 1 ? fastPool.push(tx.gasPrice) : tx.pool === 2 ? standardPool.push(tx.gasPrice) : safePool.push(tx.gasPrice)
-            }
-          }
-        }
-
-        v1.predictV1([].concat(fastestPool, fastPool, standardPool, safePool), _rec1)
-
-        v2.predictV2(fastestPool, fastPool, standardPool, safePool, _rec2)
-      } else if (error) {
-        console.error(error)
-      }
+    redisClient.getAllPools().then((result) => {
+      v1.predictV1([].concat(result.fastestPool, result.fastPool, result.standardPool, result.safePool), _rec1)
+      v2.predictV2(result.fastestPool, result.fastPool, result.standardPool, result.safePool, _rec2)
+    }).catch((e) => {
+      console.error(e)
     })
     await sleep(5000)
   }
@@ -130,9 +88,10 @@ const getRecommendations = async (_rec1, _rec2) => {
 
 const v1Recommendation = new Recommendation()
 const v2Recommendation = new Recommendation()
-const web3 = new Web3(RPC)
-const client = redis.createClient()
-const getKeysAsync = promisify(client.keys).bind(client)
+const web3 = new Web3Client(RPC)
+const redisClient = new RedisClient()
+
+web3.initClient()
 
 console.log('🔥 Matic Gas Station running ...')
 
