@@ -1,2 +1,4 @@
 .env
 mgs/node_modules
+msg/npm_debug
+.DS_Store

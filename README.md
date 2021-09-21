@@ -15,11 +15,15 @@ touch .env
 > Note: For `RPC` field, use websocket endpoint of Bor Node
 
 ```
-SAFELOW=30
-STANDARD=60
-FAST=90
-FASTEST=100
-RPC=wss://<domain>
+v1SAFELOW=60
+v1STANDARD=75
+v1FAST=90
+v1FASTEST=100
+v2SAFELOW=250
+v2STANDARD=150
+v2FAST=50
+v2FASTEST=25
+RPC=https://<domain>
 BUFFERSIZE=500
 HOST=0.0.0.0
 PORT=7000
@@ -56,7 +60,7 @@ make build_docker
 - Run docker container
 
 ```bash
-# exposes port 7000 on HOST, 
+# exposes port 7000 on HOST,
 # while expecting PORT field
 # was untouched in .env
 
@@ -105,7 +109,22 @@ docker rmi -f matic_gas_station
 
 Send HTTP GET request
 
+To get recommendations using v1
+
 ```bash
+curl -s localhost:7000/v1 | jq
+```
+
+To get recommendations using v2
+
+```bash
+curl -s localhost:7000/v2 | jq
+```
+
+The following way to request is **deprecated**. Please change older code to request using the above versioned endpoints (Changed to v1)
+
+```bash
+# deprecated use (Use v1 endpoint instead for same results)
 curl -s localhost:7000 | jq
 ```
 
@@ -117,8 +136,8 @@ You'll receive
   "standard": 3.020000001,
   "fast": 5,
   "fastest": 3870.208681652,
-  "blockTime": 2,
-  "blockNumber": 15854458
+  "sinceLastBlock": 2,
+  "lastBlockNumber": 15854458
 }
 ```
 
@@ -126,26 +145,30 @@ You'll receive
 
 ### Configuration
 
-Field | Interpretation
---- | ---
-SafeLow | Minimum gas price at which **X** % of last **N** tx(s) got accepted
-Standard | -- do --
-Fast | -- do --
-Fastest | -- do --
-RPC | Bor node's websocket endpoint URL
-BufferSize | Last N tx(s) considered when recommending
-Host | Run HTTP server on interface address
-Port | Accept connections on port
+| Field      | Interpretation                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| v1SafeLow  | Minimum gas price at which **X** % of last **N** tx(s) got accepted                        |
+| v1Standard | -- do --                                                                                   |
+| v1Fast     | -- do --                                                                                   |
+| v1Fastest  | -- do --                                                                                   |
+| v2SafeLow  | Gas price of **X**th transaction currently in the txPool in descending order of gas Prices |
+| v2Standard | -- do --                                                                                   |
+| v2Fast     | -- do --                                                                                   |
+| v2Fastest  | -- do --                                                                                   |
+| RPC        | Bor node's websocket endpoint URL                                                          |
+| BufferSize | Last N tx(s) considered when recommending                                                  |
+| Host       | Run HTTP server on interface address                                                       |
+| Port       | Accept connections on port                                                                 |
 
 ### Response
 
-Field | Interpretation
---- | ---
-SafeLow | Lowest possible recommended gas price
-Standard | Average gas price seen **( Recommended )**
-Fast | Tx should be included in ~30 sec
-Fastest | Targeted towards traders, super fast inclusion possibility
-BlockTime | Observed delay between two recently mined consequtive blocks
-BlockNumber | Latest considered block in recommendation
+| Field           | Interpretation                                                          |
+| --------------- | ----------------------------------------------------------------------- |
+| SafeLow         | Lowest possible recommended gas price                                   |
+| Standard        | Average gas price seen **( Recommended )**                              |
+| Fast            | Tx should be included in ~30 sec                                        |
+| Fastest         | Targeted towards traders, super fast inclusion possibility              |
+| SinceLastBlock  | Observed delay between two recently mined consequtive blocks in seconds |
+| LastBlockNumber | Latest considered block in recommendation                               |
 
 > Note: All gas prices in `Gwei`
