@@ -23,7 +23,7 @@ const fetchPrices = async (_rec) => {
       const result = response.data.result
       const blockTime = result[BLOCK_NUMBER] > lastBlock ? parseInt(6 / (parseInt(result[BLOCK_NUMBER]) - lastBlock)) : _rec.blockTime
       lastBlock = result[BLOCK_NUMBER]
-      _rec.updateGasPrices(result[SAFELOW], result[STANDARD], result[FAST], result[BLOCK_NUMBER], blockTime)
+      _rec.updateGasPrices(parseFloat(result[SAFELOW]), parseFloat(result[STANDARD]), parseFloat(result[FAST]), parseInt(result[BLOCK_NUMBER]), blockTime)
     })
 }
 
