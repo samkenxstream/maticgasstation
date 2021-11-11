@@ -9,11 +9,13 @@ module.exports = class Recommendation {
     blockNumber = NaN
 
     // updates gas price recommendation with latest values
-    updateGasPrices(safeLow, standard, fast, fastest) {
+    updateGasPrices(safeLow, standard, fast, blockNumber, blockTime) {
         this.safeLow = safeLow
         this.standard = standard
         this.fast = fast
-        this.fastest = fastest
+        this.fastest = fast
+        this.blockNumber = blockNumber
+        this.blockTime = blockTime
     }
 
     // To be invoked when responding to client request
