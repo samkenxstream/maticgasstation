@@ -32,6 +32,7 @@ module.exports = class RedisClient {
     const fastPool = []
     const standardPool = []
     const safePool = []
+    const dropPool = []
 
     const keys = await this.getKeysAsync('*')
     if (keys && keys.length > 0) {
@@ -41,7 +42,15 @@ module.exports = class RedisClient {
           if (transactions[i]) {
             const tx = JSON.parse(transactions[i])
             if (tx.status === 1) {
-              tx.pool === 0 ? fastestPool.push(tx.gasPrice) : tx.pool === 1 ? fastPool.push(tx.gasPrice) : tx.pool === 2 ? standardPool.push(tx.gasPrice) : safePool.push(tx.gasPrice)
+              tx.pool === 0
+                ? fastestPool.push(tx.gasPrice)
+                : tx.pool === 1
+                  ? fastPool.push(tx.gasPrice)
+                  : tx.pool === 2
+                    ? standardPool.push(tx.gasPrice)
+                    : tx.pool === 3
+                      ? safePool.push(tx.gasPrice)
+                      : dropPool.push(tx.gasPrice)
             }
           }
         }

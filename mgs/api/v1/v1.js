@@ -3,10 +3,10 @@ const path = require('path')
 
 config({ path: path.join(__dirname, '../.env'), silent: true })
 
-const SAFELOWV1 = process.env.v1SAFELOW || 5
-const STANDARDV1 = process.env.v1STANDARD || 10
-const FASTV1 = process.env.v1FAST || 20
-const FASTESTV1 = process.env.v1FASTEST || 35
+const SAFELOWV1 = process.env.v1SAFELOW || 2
+const STANDARDV1 = process.env.v1STANDARD || 5
+const FASTV1 = process.env.v1FAST || 10
+const FASTESTV1 = process.env.v1FASTEST || 15
 
 // fetch latest block mined, if it's not already processed & non-empty
 // then we'll process each transaction in it, put them in transaction pool,

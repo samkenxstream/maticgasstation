@@ -37,7 +37,7 @@ const run = async (_rec1, _rec2) => {
           const gasPrice = parseInt(tx.gasPrice)
           const gas = tx.gas
           const prediction = gasPrice >= 0.75 * _rec2.fastest ? 0 : gasPrice >= 0.75 * _rec2.fast ? 1 : gasPrice >= 0.75 * _rec2.standard ? 2 : gasPrice >= 0.75 * _rec2.safeLow ? 3 : -1
-          if (gasPrice >= 1e9 && gasPrice * gas <= 1e18) {
+          if (gasPrice >= 30e9) {
             redisClient.set(txHash, JSON.stringify(new Transaction(txHash, gasPrice, Date.now(), prediction)), 180)
           }
         }
