@@ -13,9 +13,17 @@ const port = process.env.PORT || 7000
 app.use(morgan('tiny'))
 app.use(cors())
 
-const runServer = _rec => {
+const runServer = (_v1rec, _v2rec) => {
   app.get('/', (_, res) => {
-    res.status(200).json(_rec.servable()).end()
+    res.status(200).json(_v1rec.servable()).end()
+  })
+
+  app.get('/v1', (_, res) => {
+    res.status(200).json(_v1rec.servable()).end()
+  })
+
+  app.get('/v2', (_, res) => {
+    res.status(200).json(_v2rec.servable()).end()
   })
 
   // healthcheck endpoint

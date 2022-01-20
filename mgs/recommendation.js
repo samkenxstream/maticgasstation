@@ -1,6 +1,6 @@
 // class for storing, publishing gas price recommendations
 // along with blocktime & block number when recommendation was made
-module.exports = class Recommendation {
+module.exports = class v1Recommendation {
     safeLow = NaN
     standard = NaN
     fast = NaN
