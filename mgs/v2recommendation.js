@@ -10,9 +10,18 @@ module.exports = class v2Recommendation {
 
   // updates gas price recommendation with latest values
   updateGasPrices(safeLow, standard, fast, baseFee, blockNumber, blockTime) {
-      this.safeLow = safeLow
-      this.standard = standard
-      this.fast = fast
+      this.safeLow = {
+        maxPriorityFee: safeLow,
+        maxFee: safeLow + baseFee
+      }
+      this.standard = {
+        maxPriorityFee: standard,
+        maxFee: standard + baseFee
+      }
+      this.fast = {
+        maxPriorityFee: fast,
+        maxFee: fast + baseFee
+      }
       this.estimatedBaseFee = baseFee
       this.blockNumber = blockNumber
       this.blockTime = blockTime
