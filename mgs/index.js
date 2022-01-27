@@ -23,6 +23,7 @@ const BUFFERSIZE = process.env.BUFFERSIZE || 500
 const v2SAFE = parseFloat(process.env.v2SAFE)
 const v2STANDARD = parseFloat(process.env.v2STANDARD)
 const v2FAST = parseFloat(process.env.v2FAST)
+const HISTORY_BLOCKS = parseFloat(process.env.HISTORY_BLOCKS)
 
 const checkRPC = _ => {
   if (process.env.RPC == undefined || process.env.RPC == '') {
@@ -116,35 +117,66 @@ const fetchBlockAndProcess = async (_web3, _transactions, _rec) => {
   _rec.blockNumber = _transactions.latestBlockNumber
 }
 
+// function to format fee history response
+function formatFeeHistory(result, includePending) {
+  let initBlockNum = Number(result.oldestBlock)
+  let blockNum = initBlockNum
+  let index = 0;
+  const blocks = [];
+  while (blockNum < initBlockNum + HISTORY_BLOCKS) {
+    blocks.push({
+      number: blockNum,
+      baseFeePerGas: Number(result.baseFeePerGas[index]),
+      gasUsedRatio: Number(result.gasUsedRatio[index]),
+      priorityFeePerGas: result.reward[index].map(x => Number(x)),
+    });
+    blockNum += 1;
+    index += 1;
+  }
+  if (includePending) {
+    blocks.push({
+      number: "pending",
+      baseFeePerGas: Number(result.baseFeePerGas[HISTORY_BLOCKS]),
+      gasUsedRatio: NaN,
+      priorityFeePerGas: [],
+    });
+  }
+  return blocks;
+}
+
+// Functions to calculate average fee estimations
+function avg(arr) {
+  const sum = arr.reduce((a, v) => a + v);
+  return (sum/arr.length);
+}
+
+function avgBaseFee(arr) {
+  const change = (arr[5] - arr[0]) * 10 / HISTORY_BLOCKS
+  return Math.round(arr[HISTORY_BLOCKS -1 ] + change)/1e9
+}
+
+// Feth v2 price estimations
 const fetchPricesV2 = async (_web3, _rec) => {
-  const maxFee = await axios.post(RPC, { jsonrpc: '2.0', method: 'eth_gasPrice', params: [], id: 1 })
-    .then(response => {
-      return web3.utils.hexToNumber(response.data.result) / 1e9
-    })
-  const maxPriorityFee = await axios.post(RPC, { jsonrpc: '2.0', method: 'eth_maxPriorityFeePerGas', params: [], id: 1 })
-    .then(response => {
-      return web3.utils.hexToNumber(response.data.result) / 1e9
-    })
   const blockNumber = await axios.post(RPC, { jsonrpc: '2.0', method: 'eth_blockNumber', params: [], id: 1 })
     .then(response => {
       return web3.utils.hexToNumber(response.data.result)
     })
-  _rec.updateGasPrices(
-    {
-      maxPriorityFee: v2SAFE * maxPriorityFee,
-      maxFee: v2SAFE * maxFee
-    },
-    {
-      maxPriorityFee: v2STANDARD * maxPriorityFee,
-      maxFee: v2STANDARD * maxFee
-    },
-    {
-      maxPriorityFee: v2FAST * maxPriorityFee,
-      maxFee: v2FAST * maxFee
-    },
-    maxFee - maxPriorityFee,
-    blockNumber
-  )
+  await axios.post(RPC, { jsonrpc: '2.0', method: 'eth_feeHistory', params: [HISTORY_BLOCKS, "pending", [v2SAFE, v2STANDARD, v2FAST]], id: 1 })
+    .then(response => {
+      const blocks = formatFeeHistory(response.data.result, false)
+      const safeLow = avg(blocks.map(b => b.priorityFeePerGas[0]))/1e9
+      const standard = avg(blocks.map(b => b.priorityFeePerGas[1]))/1e9
+      const fast = avg(blocks.map(b => b.priorityFeePerGas[2]))/1e9
+      const baseFeeEstimate = avgBaseFee(blocks.map(b => b.baseFeePerGas))
+
+      _rec.updateGasPrices(
+        safeLow,
+        standard,
+        fast,
+        baseFeeEstimate,
+        blockNumber
+      )
+    })
 }
 
 // sleep for `ms` miliseconds, just do nothing
