@@ -33,8 +33,15 @@ function formatFeeHistory (result, includePending) {
 
 // Functions to calculate average fee estimations
 function avg (arr) {
-  const sum = arr.reduce((a, v) => a + v)
-  return (sum / arr.length)
+  let invalidValues = 0
+  const sum = arr.reduce((a, v) => {
+    if(v == 0) {
+      invalidValues += 1
+    }
+    return a + v
+  })
+  const average = sum / (arr.length - invalidValues) / 1e9
+  return average > 30 ? average : 30
 }
 
 function avgBaseFee (arr) {
@@ -53,9 +60,9 @@ const v2fetchPrices = async (_rec) => {
   await axios.post(config.rpc, { jsonrpc: '2.0', method: 'eth_feeHistory', params: [config.v2.historyBlocks, 'pending', [config.v2.safe, config.v2.standard, config.v2.fast]], id: 1 })
     .then(response => {
       const blocks = formatFeeHistory(response.data.result, false)
-      const safeLow = avg(blocks.map(b => b.priorityFeePerGas[0])) / 1e9
-      const standard = avg(blocks.map(b => b.priorityFeePerGas[1])) / 1e9
-      const fast = avg(blocks.map(b => b.priorityFeePerGas[2])) / 1e9
+      const safeLow = avg(blocks.map(b => b.priorityFeePerGas[0]))
+      const standard = avg(blocks.map(b => b.priorityFeePerGas[1]))
+      const fast = avg(blocks.map(b => b.priorityFeePerGas[2]))
       const baseFeeEstimate = avgBaseFee(blocks.map(b => b.baseFeePerGas))
 
       _rec.updateGasPrices(
