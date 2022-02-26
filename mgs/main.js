@@ -1,8 +1,8 @@
+import v1fetchPrices from './api/v1/v1'
+import v2fetchPrices from './api/v2/v2'
 const v1Recommendation = require('./models/recommendation')
 const v2Recommendation = require('./models/v2recommendation')
 const { runServer } = require('./api/serve')
-import v1fetchPrices from './api/v1/v1'
-import v2fetchPrices from './api/v2/v2'
 
 // sleep for `ms` miliseconds, just do nothing
 const sleep = async (ms) => new Promise((res, _) => { setTimeout(res, ms) })
